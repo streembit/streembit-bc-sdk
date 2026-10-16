@@ -1,0 +1,149 @@
+{
+  "generatedBy": {
+    "repository": "streembit-bc-sdk",
+    "version": "1.0.0",
+    "generatedAt": "2026-10-16T22:13:28.365Z"
+  },
+  "chainId": 1337,
+  "version": 1,
+  "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+  "accounts": [
+    {
+      "path": "m/44'/19640701'/0'/0/0",
+      "privateKey": "db2bab361a2d3a3d77a3ab32c0e617e27584d46d04e2e7010c4254a66b082dad",
+      "publicKey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
+      "address": "SMwB3Yytvt11n79jTCBwfComY8CsBsxjd3"
+    },
+    {
+      "path": "m/44'/19640701'/0'/0/1",
+      "privateKey": "f2018d9a96d5788145b804ce957964bfeecdb8bc7667d0d25d0d61730ca2907f",
+      "publicKey": "0384cdfcb334a91b824fcae61ee479f49e643e6bdc6e0582c92669f339e312caec",
+      "address": "SixHfQZLaJHrMfcXQTo6L8NNBCNT5zReCJ"
+    },
+    {
+      "path": "m/44'/19640701'/1'/0/0",
+      "privateKey": "c519c816d6d924d3a9bc5c1af28b99944167b97320e453c93a74f2f0adabf7f8",
+      "publicKey": "027ca4b41c546559c32ae1b5af4ff2cf1c4af6720c5ff7d48b9478cdf6c3c48feb",
+      "address": "SXn81z27ALhgp7fkyZcmamTthW5ZsAguQK"
+    }
+  ],
+  "contractAddress": {
+    "cid32": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+    "address": "CPnsvUmZ6imsKM1QYi5Bbi3cG2UUY5Dgm2"
+  },
+  "encoding": {
+    "input": {
+      "z": 1,
+      "a": {
+        "d": "x",
+        "c": [
+          3,
+          {
+            "b": 2,
+            "a": 1
+          }
+        ]
+      },
+      "big": "10n"
+    },
+    "note": "input.big is the BigInt 10n and input.u is undefined in the encoder call",
+    "json": "{\"a\":{\"c\":[3,{\"a\":1,\"b\":2}],\"d\":\"x\"},\"big\":\"10n\",\"z\":1}"
+  },
+  "hashes": {
+    "input": "streembit hashing vector",
+    "blake2b256": "89d8db66d68c85c13a3023d29eba7840533d860a6d3e2fdc5e383b1816193c50",
+    "sha256": "d24df81ae2b7185940e05a08ce400261eaef09cabf2401947f9db6f473fce832",
+    "ripemd160": "68babbe553c67613d0528e204874a2fdf1397ac7",
+    "hash160": "b8ce64a4bbd02efb54c1b1ebb81479ee0ea62660",
+    "doubleSha256": "6792fda52a5539edd250ec2e52d832acf312d9161b83d3dbfd7996184b5357ff"
+  },
+  "salt": {
+    "input": "wallet-vectors salt",
+    "salt": "950b5fad4be428112b959fbbf30702ed"
+  },
+  "signature": {
+    "dataHex": "7b2261223a317d",
+    "privateKey": "db2bab361a2d3a3d77a3ab32c0e617e27584d46d04e2e7010c4254a66b082dad",
+    "publicKey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
+    "signature": "3046022100838fe5996ffa59cbd08a3494054152028e58003620cbd7a9d82ea63077f6f4de022100aa93e1706ad63d79e2a606e9a8fd4d30a6e27dbc6dada2780dd6b63a320256b4"
+  },
+  "transfer": {
+    "tx": {
+      "version": 1,
+      "chainId": 1337,
+      "type": "transfer",
+      "from": "SMwB3Yytvt11n79jTCBwfComY8CsBsxjd3",
+      "to": "SixHfQZLaJHrMfcXQTo6L8NNBCNT5zReCJ",
+      "amount": "12.5",
+      "asset": "SBRIT",
+      "sequence": 1,
+      "timestamp": 1760000000000,
+      "salt": "ac7e91db3fe04ba1478c3163160e4f13",
+      "fee": {
+        "amount": "0.01",
+        "asset": "SBRIT",
+        "to": ""
+      },
+      "signature": [
+        {
+          "publickey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
+          "signature": "304402202e12503efecf84136e6e93cfe080f89607cba5198e381965c2f0d2d34d9a102702203581d23123c6af228777514d71bc4c28c809408348faed1efb42ce992758e000"
+        }
+      ],
+      "validatorAttestations": []
+    },
+    "preimageHex": "7b22616d6f756e74223a2231322e35222c226173736574223a225342524954222c22636861696e4964223a313333372c2266726f6d223a22534d774233597974767431316e37396a5443427766436f6d593843734273786a6433222c2273616c74223a226163376539316462336665303462613134373863333136333136306534663133222c2273657175656e6365223a312c2274696d657374616d70223a313736303030303030303030302c22746f223a225369784866515a4c614a48724d66635851546f364c384e4e42434e54357a5265434a222c2274797065223a227472616e73666572222c2276657273696f6e223a317d",
+    "txid": "c15443dc99cc4ae2ba85525e2a2e063741baf31c5f36563964a8d85145c45bba"
+  },
+  "contractCall": {
+    "tx": {
+      "version": 1,
+      "chainId": 1337,
+      "type": "contract_call",
+      "from": "SMwB3Yytvt11n79jTCBwfComY8CsBsxjd3",
+      "to": "CPnsvUmZ6imsKM1QYi5Bbi3cG2UUY5Dgm2",
+      "amount": "0",
+      "asset": "SBRIT",
+      "sequence": 2,
+      "timestamp": 1760000001000,
+      "salt": "07a92c1b03462cd4aced62b74d57f629",
+      "fee": {
+        "amount": "0.01",
+        "asset": "SBRIT",
+        "to": ""
+      },
+      "signature": [
+        {
+          "publickey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
+          "signature": "304502203dcbc744f23a7568bffe702e5fa87412a8e115ae7a000663dda115c615231a6d022100ad2ce4f8693ac9d8959b009e7036befc8a6fffe0600abc1f02f487951dae1037"
+        }
+      ],
+      "validatorAttestations": [],
+      "data": "7b2276616c696461746f724964223a227631227d",
+      "method": "register",
+      "codeHash": "abababababababababababababababababababababababababababababababab",
+      "sandboxHash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "cid": "CPnsvUmZ6imsKM1QYi5Bbi3cG2UUY5Dgm2",
+      "location": "file_system"
+    },
+    "preimageHex": "7b22616d6f756e74223a2230222c226173736574223a225342524954222c22636861696e4964223a313333372c22636964223a2243506e7376556d5a36696d734b4d3151596935426269336347325555593544676d32222c22636f646548617368223a2261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162222c2264617461223a2237623232373636313663363936343631373436663732343936343232336132323736333132323764222c2266726f6d223a22534d774233597974767431316e37396a5443427766436f6d593843734273786a6433222c226c6f636174696f6e223a2266696c655f73797374656d222c226d6574686f64223a227265676973746572222c2273616c74223a223037613932633162303334363263643461636564363262373464353766363239222c2273616e64626f7848617368223a2263646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364222c2273657175656e6365223a322c2274696d657374616d70223a313736303030303030313030302c22746f223a2243506e7376556d5a36696d734b4d3151596935426269336347325555593544676d32222c2274797065223a22636f6e74726163745f63616c6c222c2276657273696f6e223a317d",
+    "txid": "f70d63247b2c3476ebd93d2cb1f9b83dbdc013cbbda826cfe40de4969206265c"
+  },
+  "walletFile": {
+    "password": "Wallet-Vectors#2026",
+    "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+    "payload": {
+      "encrypted": "4fKJ3ZTtUsACJ/0BssvjDy+LQL3BDoDY14vc/CfT9y6S0d0CEs2/ATna18pTsb6286rG7OOp6tMESejxidHxuNwSZbgJEutBoP/8v/8bnGmZSOFF8Vpb5Md8lfj8ZoNhoAF3fADbD91UEe1q",
+      "salt": "5NXNYgVKukB/OVAReppducmnV1V0zzs2tQ2Fk6hs++Y=",
+      "iv": "+secpR8WFYrHLQ4lJTTSWg==",
+      "authTag": "P0XYm1X2O7y0fJRtJ1VoCA==",
+      "kdf": "scrypt",
+      "kdfParams": {
+        "N": 131072,
+        "r": 8,
+        "p": 1,
+        "dkLen": 32
+      }
+    }
+  }
+}

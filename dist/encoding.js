@@ -1,0 +1,147 @@
+"use strict";
+/**
+ * Deterministic encoding.
+ *
+ * The bytes a wallet signs and hashes must be identical to the bytes the node signs and hashes.
+ * Every function here defines those bytes; the node and every wallet use this module.
+ *
+ * Web APIs only (TextEncoder, TextDecoder, Web Crypto, String.prototype.normalize); runs in Node,
+ * in the browser and in NW.js.
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.encodeDeterministic = encodeDeterministic;
+exports.decodeDeterministic = decodeDeterministic;
+exports.encodeDeterministicJSON = encodeDeterministicJSON;
+exports.decodeDeterministicJSON = decodeDeterministicJSON;
+exports.bytesToHex = bytesToHex;
+exports.hexToBytes = hexToBytes;
+exports.utf8ToBytes = utf8ToBytes;
+exports.bytesToUtf8 = bytesToUtf8;
+exports.concatBytes = concatBytes;
+exports.bytesToBase64 = bytesToBase64;
+exports.base64ToBytes = base64ToBytes;
+exports.randomBytes = randomBytes;
+const HEX = '0123456789abcdef';
+/** Canonical string to UTF-8 bytes: rejects BOM and NUL, NFC-normalizes, LF line endings. */
+function encodeDeterministic(input) {
+    if (input.length > 0 && input.charCodeAt(0) === 0xfeff) {
+        throw new Error('BOM not allowed');
+    }
+    if (input.indexOf('\0') !== -1) {
+        throw new Error('Binary NULL not allowed');
+    }
+    let normalized = input.normalize('NFC');
+    normalized = normalized.replace(/\r\n?/g, '\n');
+    return new TextEncoder().encode(normalized);
+}
+/** Canonical UTF-8 bytes to string. */
+function decodeDeterministic(bytes) {
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    if (text.indexOf('\0') !== -1) {
+        throw new Error('Binary NULL not allowed');
+    }
+    return text.normalize('NFC');
+}
+function bigIntReplacer(_key, value) {
+    if (typeof value === 'bigint') {
+        return value.toString() + 'n';
+    }
+    return value;
+}
+function bigIntReviver(_key, value) {
+    if (typeof value === 'string' && /^\d+n$/.test(value)) {
+        return BigInt(value.slice(0, -1));
+    }
+    return value;
+}
+function sortObjectKeys(obj) {
+    if (obj === null || obj === undefined) {
+        return obj;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(sortObjectKeys);
+    }
+    if (typeof obj === 'object') {
+        const source = obj;
+        const sorted = {};
+        const keys = Object.keys(source).sort();
+        for (const key of keys) {
+            sorted[key] = sortObjectKeys(source[key]);
+        }
+        return sorted;
+    }
+    return obj;
+}
+function encodeDeterministicJSON(obj, options) {
+    const sorted = sortObjectKeys(obj);
+    const json = JSON.stringify(sorted, bigIntReplacer);
+    const bytes = new TextEncoder().encode(json);
+    if (options && options.asString) {
+        return bytesToUtf8(bytes);
+    }
+    if (options && options.asHex) {
+        return bytesToHex(bytes);
+    }
+    return bytes;
+}
+function decodeDeterministicJSON(data) {
+    const json = new TextDecoder().decode(data);
+    return JSON.parse(json, bigIntReviver);
+}
+/** Lowercase hex. */
+function bytesToHex(bytes) {
+    let out = '';
+    for (let i = 0; i < bytes.length; i++) {
+        const b = bytes[i];
+        out += HEX[b >>> 4] + HEX[b & 0x0f];
+    }
+    return out;
+}
+function hexToBytes(hex) {
+    if (typeof hex !== 'string' || hex.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(hex)) {
+        throw new Error('Invalid hex string');
+    }
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = parseInt(hex.substring(i * 2, i * 2 + 2), 16);
+    }
+    return bytes;
+}
+function utf8ToBytes(str) {
+    return new TextEncoder().encode(str);
+}
+function bytesToUtf8(bytes) {
+    return new TextDecoder().decode(bytes);
+}
+function concatBytes(...arrays) {
+    const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const arr of arrays) {
+        result.set(arr, offset);
+        offset += arr.length;
+    }
+    return result;
+}
+/** Standard base64 with padding, as Node's Buffer.toString('base64') produces. */
+function bytesToBase64(bytes) {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+function base64ToBytes(b64) {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+/** Cryptographically secure random bytes from Web Crypto (globalThis.crypto in Node and in browsers). */
+function randomBytes(length) {
+    const out = new Uint8Array(length);
+    globalThis.crypto.getRandomValues(out);
+    return out;
+}

@@ -1,0 +1,71 @@
+{
+  "name": "streembit-bc-sdk",
+  "version": "1.0.0",
+  "description": "Streembit Blockchain SDK: wallet core and Accountable Node API client",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/streembit/streembit-bc-sdk.git"
+  },
+  "author": "Zovolt Ltd, UK <tzpardi@streembit.com>",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "node --import=tsx --test tests/**/*.test.ts",
+    "test:watch": "node --import=tsx --test --watch tests/**/*.test.ts",
+    "test:coverage": "node --import=tsx --test --experimental-test-coverage tests/**/*.test.ts",
+    "type-check": "tsc --noEmit",
+    "vectors": "tsx scripts/vectors.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.js",
+      "require": "./dist/api.js"
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/streembit/streembit-bc-sdk/issues"
+  },
+  "homepage": "https://github.com/streembit/streembit-bc-sdk#readme",
+  "directories": {
+    "test": "tests"
+  },
+  "keywords": [
+    "streembit blockchain",
+    "wallet",
+    "sdk"
+  ],
+  "dependencies": {
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "@scure/bip32": "2.4.0",
+    "@scure/bip39": "2.4.0",
+    "streembit-bc-types": "github:streembit/streembit-bc-types"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "bip32": "^4.0.0",
+    "bip39": "^3.1.2",
+    "blakejs": "^1.2.1",
+    "rimraf": "^6.0.1",
+    "tiny-secp256k1": "^2.2.4",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}
