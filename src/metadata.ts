@@ -4,6 +4,8 @@
  */
 
 export interface WalletMetadata {
+    /** what the sealed payload holds; written by createWalletFile and createKeyFile, never read by the node */
+    kind?: 'mnemonic' | 'key';
     lastUsedAccount?: number;
     /** highest address index handed out, per account index */
     lastUsedAddress?: { [accountIndex: number]: number };
@@ -18,10 +20,12 @@ export interface KnownAddressIndex {
 /** Address lookup searches past the last tracked index by this many addresses (BIP44 gap limit). */
 export const ADDRESS_GAP_LIMIT = 20;
 
-/** Account indexes tracked in the metadata; account 0 is always included. */
+/** Account indexes tracked in the metadata; account 0 when none is tracked. */
 export function trackedAccounts(metadata: WalletMetadata | undefined): number[] {
     const accounts = new Set<number>(Object.keys(metadata?.lastUsedAddress || {}).map(Number));
-    accounts.add(0);
+    if (accounts.size === 0) {
+        accounts.add(0);
+    }
     return Array.from(accounts).sort((a, b) => a - b);
 }
 
@@ -57,7 +61,6 @@ export function withNextAddress(metadata: WalletMetadata | undefined, accountInd
     return {
         metadata: {
             ...(metadata || {}),
-            lastUsedAccount: accountIndex,
             lastUsedAddress: { ...(metadata?.lastUsedAddress || {}), [accountIndex]: addressIndex }
         },
         addressIndex

@@ -1,5 +1,6 @@
 /**
- * secp256k1 signing: SHA-256 of the data, ECDSA with @noble/curves, DER output, low-S.
+ * secp256k1 signing: SHA-256 of the data, ECDSA with @noble/curves, DER output, low-S, RFC 6979 nonce
+ * hedged with extra entropy (RFC 6979 section 3.6).
  *
  * verify() accepts high-S signatures as well, so that signatures produced by OpenSSL, which emits high-S
  * about half of the time, verify too.
@@ -28,7 +29,7 @@ export declare function generateKeyPair(): {
     privateKey: string;
     publicKey: string;
 };
-/** Sign-and-verify self test of a key pair. */
+/** Sign-and-verify self test of a key pair; false on a malformed key, throws when signing itself fails. */
 export declare function validateKeyPair(publicKeyHex: string, privateKeyHex: string): boolean;
 /** In-memory signer over a private key. Call dispose() as soon as the signing action is complete. */
 export declare class SoftwareSigner implements Signer {

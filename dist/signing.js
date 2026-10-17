@@ -1,6 +1,7 @@
 "use strict";
 /**
- * secp256k1 signing: SHA-256 of the data, ECDSA with @noble/curves, DER output, low-S.
+ * secp256k1 signing: SHA-256 of the data, ECDSA with @noble/curves, DER output, low-S, RFC 6979 nonce
+ * hedged with extra entropy (RFC 6979 section 3.6).
  *
  * verify() accepts high-S signatures as well, so that signatures produced by OpenSSL, which emits high-S
  * about half of the time, verify too.
@@ -26,7 +27,7 @@ function sign(dataHex, privateKeyHex) {
         throw new Error('Private key must be 64 hex characters (32 bytes)');
     }
     const digest = (0, hashing_1.sha256)((0, encoding_1.hexToBytes)(dataHex));
-    const compact = secp256k1_js_1.secp256k1.sign(digest, (0, encoding_1.hexToBytes)(privateKeyHex), { prehash: false, lowS: true });
+    const compact = secp256k1_js_1.secp256k1.sign(digest, (0, encoding_1.hexToBytes)(privateKeyHex), { prehash: false, lowS: true, extraEntropy: true });
     const der = secp256k1_js_1.secp256k1.Signature.fromBytes(compact, 'compact').toBytes('der');
     return (0, encoding_1.bytesToHex)(der);
 }
@@ -56,7 +57,7 @@ function generateKeyPair() {
     const privateKey = secp256k1_js_1.secp256k1.utils.randomSecretKey();
     return { privateKey: (0, encoding_1.bytesToHex)(privateKey), publicKey: (0, encoding_1.bytesToHex)(secp256k1_js_1.secp256k1.getPublicKey(privateKey, true)) };
 }
-/** Sign-and-verify self test of a key pair. */
+/** Sign-and-verify self test of a key pair; false on a malformed key, throws when signing itself fails. */
 function validateKeyPair(publicKeyHex, privateKeyHex) {
     if (typeof privateKeyHex !== 'string' || privateKeyHex.length !== 64 || !/^[0-9a-fA-F]+$/.test(privateKeyHex)) {
         return false;
@@ -65,13 +66,15 @@ function validateKeyPair(publicKeyHex, privateKeyHex) {
         return false;
     }
     const payloadHex = (0, encoding_1.bytesToHex)((0, encoding_1.utf8ToBytes)('validateKeyPair-test'));
+    let signatureHex;
     try {
-        const signatureHex = sign(payloadHex, privateKeyHex);
-        return verify(payloadHex, signatureHex, publicKeyHex);
+        signatureHex = sign(payloadHex, privateKeyHex);
     }
-    catch {
-        return false;
+    catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`validateKeyPair failed to sign self-test payload with NODE_PRIVATE_KEY: ${message}`);
     }
+    return verify(payloadHex, signatureHex, publicKeyHex);
 }
 /** In-memory signer over a private key. Call dispose() as soon as the signing action is complete. */
 class SoftwareSigner {

@@ -48,7 +48,7 @@ function createContractAddress(filePath, deployerPubKey, chainId) {
     }
     const chainIdBytes = new Uint8Array(4);
     new DataView(chainIdBytes.buffer).setUint32(0, chainId, false);
-    const preimage = (0, encoding_1.concatBytes)((0, encoding_1.utf8ToBytes)(filePath), (0, encoding_1.hexToBytes)(deployerPubKey), chainIdBytes);
+    const preimage = (0, encoding_1.concat)((0, encoding_1.utf8ToBytes)(filePath), (0, encoding_1.hexToBytes)(deployerPubKey), chainIdBytes);
     return (0, base58_1.base58checkEncode)(streembit_bc_types_1.ADDRESS_PREFIX_CONTRACT, (0, hashing_1.hash160)(preimage));
 }
 /**
@@ -61,7 +61,7 @@ function encodeContractAddress(chainId, cid) {
     }
     const chainIdBytes = new Uint8Array(4);
     new DataView(chainIdBytes.buffer).setUint32(0, chainId, true);
-    const preimage = (0, encoding_1.concatBytes)((0, encoding_1.utf8ToBytes)('SB-CID'), chainIdBytes, cid);
+    const preimage = (0, encoding_1.concat)((0, encoding_1.utf8ToBytes)('SB-CID'), chainIdBytes, cid);
     return (0, base58_1.base58checkEncode)(streembit_bc_types_1.ADDRESS_PREFIX_CONTRACT, (0, hashing_1.hash160)(preimage));
 }
 /** Base58Check with a known version byte and a 20-byte payload. */

@@ -25,13 +25,13 @@ export declare function encodeDeterministicJSON(obj: unknown, options: {
 } | {
     asHex: true;
 }): string;
-export declare function decodeDeterministicJSON(data: Uint8Array): unknown;
+export declare function decodeDeterministicJSON<T = any>(data: Uint8Array): T;
 /** Lowercase hex. */
 export declare function bytesToHex(bytes: Uint8Array): string;
 export declare function hexToBytes(hex: string): Uint8Array<ArrayBuffer>;
 export declare function utf8ToBytes(str: string): Uint8Array<ArrayBuffer>;
 export declare function bytesToUtf8(bytes: Uint8Array): string;
-export declare function concatBytes(...arrays: Uint8Array[]): Uint8Array<ArrayBuffer>;
+export declare function concat(...arrays: Uint8Array[]): Uint8Array<ArrayBuffer>;
 /** Standard base64 with padding, as Node's Buffer.toString('base64') produces. */
 export declare function bytesToBase64(bytes: Uint8Array): string;
 export declare function base64ToBytes(b64: string): Uint8Array<ArrayBuffer>;

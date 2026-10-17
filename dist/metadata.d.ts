@@ -3,6 +3,8 @@
  * metadata object of wallet.json; the wallet that owns the file decides how the file is stored.
  */
 export interface WalletMetadata {
+    /** what the sealed payload holds; written by createWalletFile and createKeyFile, never read by the node */
+    kind?: 'mnemonic' | 'key';
     lastUsedAccount?: number;
     /** highest address index handed out, per account index */
     lastUsedAddress?: {
@@ -18,7 +20,7 @@ export interface KnownAddressIndex {
 }
 /** Address lookup searches past the last tracked index by this many addresses (BIP44 gap limit). */
 export declare const ADDRESS_GAP_LIMIT = 20;
-/** Account indexes tracked in the metadata; account 0 is always included. */
+/** Account indexes tracked in the metadata; account 0 when none is tracked. */
 export declare function trackedAccounts(metadata: WalletMetadata | undefined): number[];
 /** Highest address index handed out for an account, or -1 when none. */
 export declare function lastUsedIndex(metadata: WalletMetadata | undefined, accountIndex: number): number;

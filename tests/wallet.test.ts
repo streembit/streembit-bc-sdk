@@ -21,7 +21,9 @@ import path from 'node:path';
 import { mnemonicToSeedSync } from 'bip39';
 import { BIP32Factory } from 'bip32';
 import * as ecc from 'tiny-secp256k1';
-import type { TransferTransaction, ContractCallTransaction } from 'streembit-bc-types';
+import * as blake from 'blakejs';
+import { AssetId, SBRIT_FEE_AMOUNT, SSC_FEE_AMOUNT } from 'streembit-bc-types';
+import type { TransferTransaction, ContractCallTransaction, TransactionSignature } from 'streembit-bc-types';
 
 import * as W from '../src';
 
@@ -37,8 +39,8 @@ interface Vectors {
     salt: { input: string; salt: string };
     signature: { dataHex: string; privateKey: string; publicKey: string; signature: string };
     transfer: { tx: TransferTransaction; preimageHex: string; txid: string };
-    contractCall: { tx: ContractCallTransaction; preimageHex: string; txid: string };
-    walletFile: { password: string; mnemonic: string; payload: W.EncryptedPayload };
+    contractCall: { tx: ContractCallTransaction; preimageHex: string; txid: string; cosignature: TransactionSignature; pendingTxId: string };
+    walletFile: { password: string; mnemonic: string; payload: W.EncryptedPayload; keyPayload: W.EncryptedPayload };
 }
 
 const vectors = JSON.parse(readFileSync(path.join(__dirname, 'wallet-vectors.json'), 'utf8')) as Vectors;
@@ -201,7 +203,9 @@ describe(`Wallet core against the vectors (${vectors.generatedBy.repository} ${v
             assert.ok(!W.verify(v.dataHex + '00', v.signature, v.publicKey));
             assert.ok(!W.verify(v.dataHex, v.signature, W.deriveAccount(W.generateMnemonic(), 0, 0).publicKey));
             assert.ok(W.validateKeyPair(v.publicKey, v.privateKey));
-            assert.ok(!W.validateKeyPair(v.publicKey, 'ff'.repeat(32)));
+            assert.ok(!W.validateKeyPair(v.publicKey, W.deriveAccount(W.generateMnemonic(), 0, 0).privateKey));
+            assert.ok(!W.validateKeyPair(v.publicKey, 'zz'.repeat(32)));
+            assert.throws(() => W.validateKeyPair(v.publicKey, 'ff'.repeat(32)), /failed to sign self-test payload/);
             const pair = W.generateKeyPair();
             assert.equal(pair.privateKey.length, 64);
             assert.equal(pair.publicKey.length, 66);
@@ -237,25 +241,76 @@ describe(`Wallet core against the vectors (${vectors.generatedBy.repository} ${v
         it('builds and signs a transfer that reproduces the vector transfer field by field', async () => {
             const v = vectors.transfer;
             const sender = vectors.accounts[0];
-            const tx = W.buildTransferTx({ chainId: v.tx.chainId, version: v.tx.version, from: v.tx.from, to: v.tx.to, amount: v.tx.amount, sequence: v.tx.sequence, timestamp: v.tx.timestamp, salt: v.tx.salt });
+            const tx = W.buildTransferTx({ chainId: v.tx.chainId, version: v.tx.version, from: v.tx.from, to: v.tx.to, amount: v.tx.amount, asset: v.tx.asset, sequence: v.tx.sequence, timestamp: v.tx.timestamp, salt: v.tx.salt });
             const signer = new W.SoftwareSigner(sender.privateKey);
-            await W.signTransaction(tx, signer);
+            await W.signTransaction(tx, [signer]);
             signer.dispose();
             assert.equal(W.serializeForSigning(tx), v.preimageHex);
             assert.deepEqual({ ...tx, signature: undefined }, { ...v.tx, signature: undefined });
             assert.equal(tx.signature[0].publickey, v.tx.signature[0].publickey);
+            assert.ok(W.validateTransactionSignatures(tx).valid);
             assert.equal(W.txToString(tx), JSON.stringify(tx));
+        });
+
+        it('builds an SSC transfer with the SSC fee and refuses an unknown asset', () => {
+            const v = vectors.transfer.tx;
+            const ssc = W.buildTransferTx({ chainId: v.chainId, version: v.version, from: v.from, to: v.to, amount: '5', asset: AssetId.SSC, sequence: 1 });
+            assert.equal(ssc.asset, AssetId.SSC);
+            assert.deepEqual(ssc.fee, { amount: SSC_FEE_AMOUNT, asset: AssetId.SSC, to: '' });
+            assert.equal(vectors.transfer.tx.fee.amount, SBRIT_FEE_AMOUNT);
+            assert.throws(() => W.buildTransferTx({ chainId: v.chainId, version: v.version, from: v.from, to: v.to, amount: '5', asset: 'GOLD' as AssetId, sequence: 1 }), /asset/);
+            assert.throws(() => W.buildTransferTx({ chainId: v.chainId, version: v.version, from: '', to: v.to, amount: '5', asset: AssetId.SBRIT, sequence: 1 }), /from/);
         });
 
         it('builds a contract call that reproduces the vector call field by field', async () => {
             const v = vectors.contractCall;
             const sender = vectors.accounts[0];
             const call = W.buildContractCallTx({ chainId: v.tx.chainId, version: v.tx.version, from: v.tx.from, to: v.tx.to, method: v.tx.method, data: { validatorId: 'v1' }, codeHash: v.tx.codeHash, sandboxHash: v.tx.sandboxHash, sequence: v.tx.sequence, timestamp: v.tx.timestamp, salt: v.tx.salt });
+            assert.deepEqual({ ...call, signature: undefined }, { ...v.tx, signature: undefined });
             const signer = new W.SoftwareSigner(sender.privateKey);
-            await W.signTransaction(call, signer);
+            await W.signTransaction(call, [signer]);
             signer.dispose();
             assert.equal(W.serializeForSigning(call), v.preimageHex);
             assert.equal(W.computeTxId({ ...call, signature: v.tx.signature }), v.txid);
+        });
+
+        it('multisig: detached signatures, combineTxWithSigs, the node signature rules and pendingTxId', async () => {
+            const v = vectors.contractCall;
+            const unsigned: ContractCallTransaction = { ...v.tx, signature: [], validatorAttestations: [] };
+            assert.equal(W.pendingTxId(unsigned), v.pendingTxId);
+            assert.equal(W.pendingTxId(unsigned), Buffer.from(blake.blake2b(Buffer.from(v.preimageHex, 'hex'), undefined, 32)).toString('hex'));
+
+            // two OpenSSL signatures from the vectors, assembled here
+            const assembled = W.combineTxWithSigs(unsigned, [v.tx.signature[0], v.cosignature]);
+            assert.equal(assembled.signature.length, 2);
+            assert.ok(W.validateTransactionSignatures(assembled).valid);
+            assert.ok(W.publicKeyOwnsAddress(assembled.from, assembled.signature[0].publickey));
+            assert.ok(!W.publicKeyOwnsAddress(assembled.from, assembled.signature[1].publickey));
+
+            // two signers here, verified under the node rules
+            const officer1 = new W.SoftwareSigner(vectors.accounts[0].privateKey);
+            const officer2 = new W.SoftwareSigner(vectors.accounts[1].privateKey);
+            const detached = await W.getTxSignatures(unsigned, [officer1, officer2]);
+            assert.equal(detached.length, 2);
+            assert.equal(detached[1].publickey, vectors.accounts[1].publicKey);
+            const signed = W.combineTxWithSigs(unsigned, detached);
+            assert.ok(W.validateTransactionSignatures(signed).valid);
+            assert.ok(W.validateTransactionSignatures(W.combineTxWithSigs(unsigned, [v.cosignature, detached[0]])).valid, 'mixed OpenSSL and SDK signatures');
+            officer1.dispose();
+            officer2.dispose();
+
+            assert.ok(W.validateTransactionAddressOwnership(assembled));
+            assert.ok(W.validateTransactionAddressOwnership({ ...assembled, signature: [v.cosignature, v.tx.signature[0]] }), 'owner signature in any position');
+            assert.ok(!W.validateTransactionAddressOwnership({ ...assembled, signature: [v.cosignature] }), 'no signer owns from');
+            assert.ok(!W.validateTransactionAddressOwnership(unsigned));
+            assert.ok(W.validateTransactionAddressOwnership(vectors.transfer.tx));
+
+            assert.match(W.validateTransactionSignatures(unsigned).error!, /cannot be empty/);
+            assert.match(W.validateTransactionSignatures({ ...signed, signature: [detached[0], detached[0]] }).error!, /Duplicate/);
+            assert.match(W.validateTransactionSignatures({ ...signed, signature: [detached[0], detached[1], v.cosignature, v.tx.signature[0]] }).error!, /more than 3/);
+            assert.match(W.validateTransactionSignatures({ ...signed, amount: '1' }).error!, /Invalid signature for publickey/);
+            assert.throws(() => W.combineTxWithSigs(unsigned, []), /At least one signature/);
+            assert.throws(() => W.combineTxWithSigs(unsigned, [{ publickey: '', signature: 'ab' }]), /publickey/);
         });
 
         it('attestation preimage is Blake2b-256(chainId || txid || from || sequence)', () => {
@@ -264,28 +319,52 @@ describe(`Wallet core against the vectors (${vectors.generatedBy.repository} ${v
             assert.equal(W.serializeForAttestation(v.tx, v.txid), expected);
         });
 
-        it('refuses to sign for an address the signer does not own, refuses self-transfer, validates amounts', async () => {
-            const from = vectors.accounts[0];
-            const to = vectors.accounts[1];
-            const signer = new W.SoftwareSigner(from.privateKey);
-            await assert.rejects(W.signTransaction(W.buildTransferTx({ chainId: 1337, version: 1, from: to.address, to: from.address, amount: '1', sequence: 1 }), signer));
-            signer.dispose();
-            assert.throws(() => W.buildTransferTx({ chainId: 1337, version: 1, from: from.address, to: from.address, amount: '1', sequence: 1 }));
-            assert.ok(W.validateAmount('0.00000001'));
-            assert.ok(W.validateAmount('100'));
-            assert.ok(!W.validateAmount('0'));
-            assert.ok(!W.validateAmount('1.123456789'));
-            assert.ok(!W.validateAmount('-1'));
-            assert.ok(!W.validateAmount('1e3'));
+        it('signTransaction refuses signers that do not control from, as the node creators do', async () => {
+            const v = vectors.transfer.tx;
+            const owner = new W.SoftwareSigner(vectors.accounts[0].privateKey);
+            const other = new W.SoftwareSigner(vectors.accounts[1].privateKey);
+            const build = (): TransferTransaction => W.buildTransferTx({ chainId: v.chainId, version: v.version, from: v.from, to: v.to, amount: '1', asset: AssetId.SBRIT, sequence: 1 });
+            await assert.rejects(W.signTransaction(build(), [other]), /^Error: Signer does not control the from address$/);
+            await assert.rejects(W.signTransaction(build(), [other, other]), /None of the 2 signers control the from address/);
+            await assert.rejects(W.signTransaction(build(), []), /At least one signer/);
+            const signed = await W.signTransaction(build(), [other, owner]);
+            assert.equal(signed.signature.length, 2);
+            assert.ok(W.validateTransactionSignatures(signed).valid);
+            assert.ok(W.validateTransactionAddressOwnership(signed));
+            const detached = await W.getTxSignatures(build(), [other]);
+            assert.equal(detached.length, 1, 'detached co-signing stays unchecked');
+            owner.dispose();
+            other.dispose();
         });
 
-        it('refuses a contract call to a user address and encodes a parameterless call with empty data', () => {
+        it('validates amounts with the node decimal rule', () => {
+            assert.ok(W.validateAmount('0.00000001'));
+            assert.ok(W.validateAmount('100'));
+            assert.ok(W.validateAmount('1.123456789'));
+            assert.ok(W.validateAmount('1e3'));
+            assert.ok(!W.validateAmount('0'));
+            assert.ok(!W.validateAmount('-1'));
+            assert.ok(!W.validateAmount('abc'));
+            assert.ok(!W.validateAmount(''));
+            assert.ok(!W.validateAmount('0.000000001', { minAmount: '0.00000001' }));
+            assert.ok(W.validateAmount('5', { minAmount: '1', maxAmount: '10' }));
+            assert.ok(!W.validateAmount('11', { maxAmount: '10' }));
+            assert.throws(() => W.buildTransferTx({ chainId: 1337, version: 1, from: vectors.accounts[0].address, to: vectors.accounts[1].address, amount: '0', asset: AssetId.SBRIT, sequence: 1 }), /Amount must be a positive number/);
+        });
+
+        it('contract call: parameterless call has empty data, string data and negative amounts are refused', () => {
             const v = vectors.contractCall.tx;
-            const base = { chainId: v.chainId, version: v.version, from: v.from, method: 'query', codeHash: v.codeHash, sandboxHash: v.sandboxHash, sequence: 3 };
-            assert.throws(() => W.buildContractCallTx({ ...base, to: vectors.accounts[1].address }));
-            assert.ok(W.isContractAddress(v.to));
-            assert.equal(W.buildContractCallTx({ ...base, to: v.to }).data, '');
-            assert.throws(() => W.buildContractCallTx({ ...base, to: v.to, data: 'abcd' as unknown as Record<string, unknown> }));
+            const base = { chainId: v.chainId, version: v.version, from: v.from, to: v.to, method: 'query', codeHash: v.codeHash, sandboxHash: v.sandboxHash, sequence: 3 };
+            assert.equal(W.buildContractCallTx(base).data, '');
+            assert.equal(W.buildContractCallTx({ ...base, data: null }).data, '6e756c6c', 'null encodes as JSON null, as the node does');
+            assert.notEqual(W.serializeForSigning(W.buildContractCallTx({ ...base, data: null, salt: 's', timestamp: 1 })), W.serializeForSigning(W.buildContractCallTx({ ...base, salt: 's', timestamp: 1 })));
+            assert.equal(W.buildContractCallTx(base).amount, '0');
+            assert.equal(W.buildContractCallTx({ ...base, amount: '2.5' }).amount, '2.5');
+            assert.throws(() => W.buildContractCallTx({ ...base, data: 'abcd' as unknown as Record<string, unknown> }), /plain object/);
+            assert.throws(() => W.buildContractCallTx({ ...base, amount: '-1' }), /cannot be negative/);
+            assert.throws(() => W.buildContractCallTx({ ...base, amount: 'abc' }), /Invalid amount format/);
+            assert.throws(() => W.buildContractCallTx({ ...base, method: ' ' }), /method name is required/);
+            assert.throws(() => W.buildContractCallTx({ ...base, codeHash: '' }), /codeHash/);
         });
     });
 
@@ -325,11 +404,56 @@ describe(`Wallet core against the vectors (${vectors.generatedBy.repository} ${v
             assert.deepEqual(file.kdfParams, W.DEFAULT_SCRYPT_PARAMS);
             assert.equal(await W.openWalletFile(JSON.parse(JSON.stringify(file)) as W.WalletData, password), mnemonic);
             await assert.rejects(W.openWalletFile(file, 'Wrong-Password#2026'));
+            await assert.rejects(W.openWalletFile(file, 'short'), /at least 12 characters/);
             await assert.rejects(W.openWalletFile({ ...file, version: 2 }, password));
             await assert.rejects(W.openWalletFile({ ...file, kdf: 'argon2id' as unknown as 'scrypt' }, password));
             const changed = await W.changeWalletPassword(file, password, 'Another-Pass#2027');
             assert.equal(await W.openWalletFile(changed, 'Another-Pass#2027'), mnemonic);
             assert.equal(changed.createdAt, file.createdAt);
+        });
+
+        it('key file: an officer key sealed by OpenSSL opens here, round trip, validation and payload type errors', async () => {
+            const v = vectors.walletFile;
+            const key = vectors.accounts[0].privateKey;
+            const password = 'Officer-Key#2026';
+            const sealed: W.WalletData = { version: 1, ...v.keyPayload, network: 'devnet', createdAt: new Date().toISOString(), metadata: { kind: 'key' } };
+            assert.equal(await W.openKeyFile(sealed, v.password), key);
+            await assert.rejects(W.openWalletFile(sealed, v.password), /does not contain a mnemonic/);
+
+            const file = await W.createKeyFile(key.toUpperCase(), password, { network: 'devnet' });
+            assert.equal(file.metadata.kind, 'key');
+            assert.equal(await W.openKeyFile(JSON.parse(JSON.stringify(file)) as W.WalletData, password), key);
+            await assert.rejects(W.openKeyFile(file, 'Wrong-Password#2026'));
+            const signer = new W.SoftwareSigner(await W.openKeyFile(file, password));
+            assert.equal(signer.publicKey, vectors.accounts[0].publicKey);
+            assert.ok(W.verify(vectors.signature.dataHex, await signer.sign(vectors.signature.dataHex), signer.publicKey));
+            signer.dispose();
+
+            await assert.rejects(W.createKeyFile('abc', password, { network: 'devnet' }), /Invalid private key/);
+            await assert.rejects(W.createKeyFile('zz'.repeat(32), password, { network: 'devnet' }), /Invalid private key/);
+            await assert.rejects(W.createKeyFile('ff'.repeat(32), password, { network: 'devnet' }), /Invalid private key/);
+            await assert.rejects(W.createKeyFile(key, 'short', { network: 'devnet' }), /at least 12 characters/);
+
+            const mnemonicFile = await W.createWalletFile(vectors.mnemonic, password, { network: 'devnet' });
+            assert.equal(mnemonicFile.metadata.kind, 'mnemonic');
+            await assert.rejects(W.openKeyFile(mnemonicFile, password), /does not contain a private key/);
+
+            const changed = await W.changeWalletPassword(file, password, 'Another-Key#2027');
+            assert.equal(await W.openKeyFile(changed, 'Another-Key#2027'), key);
+            assert.equal(changed.metadata.kind, 'key');
+        });
+
+        it('validates the recovery phrase on create and on open, and stores it in canonical form', async () => {
+            const password = 'Wallet-File#2026';
+            await assert.rejects(W.createWalletFile('not a valid phrase at all', password, { network: 'devnet' }), /Invalid mnemonic phrase/);
+            await assert.rejects(W.createWalletFile('', password, { network: 'devnet' }), /Invalid mnemonic phrase/);
+            const spaced = '  ' + vectors.mnemonic.toUpperCase().replace(/ /g, '   ') + '\n';
+            const file = await W.createWalletFile(spaced, password, { network: 'devnet' });
+            assert.equal(await W.openWalletFile(file, password), vectors.mnemonic);
+            const bad = await W.aesEncryptScrypt(JSON.stringify({ mnemonic: 'abandon abandon abandon' }), password, { N: 2 ** 14, r: 8, p: 1, dkLen: 32 });
+            await assert.rejects(W.openWalletFile({ ...file, ...bad }, password), /Invalid mnemonic phrase/);
+            const none = await W.aesEncryptScrypt(JSON.stringify({ other: 1 }), password, { N: 2 ** 14, r: 8, p: 1, dkLen: 32 });
+            await assert.rejects(W.openWalletFile({ ...file, ...none }, password), /does not contain a mnemonic/);
         });
     });
 });

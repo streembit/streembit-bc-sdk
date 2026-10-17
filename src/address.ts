@@ -9,7 +9,7 @@
 import { ADDRESS_PREFIX_USER, ADDRESS_PREFIX_CONTRACT } from 'streembit-bc-types';
 import { hash160 } from './hashing';
 import { base58Decode, base58checkDecode, base58checkEncode, base58checkDecodeWithVersion } from './base58';
-import { hexToBytes, utf8ToBytes, concatBytes } from './encoding';
+import { hexToBytes, utf8ToBytes, concat } from './encoding';
 
 export type AddressType = 'user' | 'contract';
 
@@ -42,7 +42,7 @@ export function createContractAddress(filePath: string, deployerPubKey: string, 
     }
     const chainIdBytes = new Uint8Array(4);
     new DataView(chainIdBytes.buffer).setUint32(0, chainId, false);
-    const preimage = concatBytes(utf8ToBytes(filePath), hexToBytes(deployerPubKey), chainIdBytes);
+    const preimage = concat(utf8ToBytes(filePath), hexToBytes(deployerPubKey), chainIdBytes);
     return base58checkEncode(ADDRESS_PREFIX_CONTRACT, hash160(preimage));
 }
 
@@ -56,7 +56,7 @@ export function encodeContractAddress(chainId: number, cid: Uint8Array): string 
     }
     const chainIdBytes = new Uint8Array(4);
     new DataView(chainIdBytes.buffer).setUint32(0, chainId, true);
-    const preimage = concatBytes(utf8ToBytes('SB-CID'), chainIdBytes, cid);
+    const preimage = concat(utf8ToBytes('SB-CID'), chainIdBytes, cid);
     return base58checkEncode(ADDRESS_PREFIX_CONTRACT, hash160(preimage));
 }
 

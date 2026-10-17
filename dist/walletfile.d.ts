@@ -58,11 +58,15 @@ export declare function validatePassword(password: string): PasswordValidation;
 /** The AES-256 key: scrypt of the password and salt with the given parameters. */
 export declare function deriveKey(password: string, salt: Uint8Array, params: ScryptParams): Uint8Array<ArrayBuffer>;
 /** Encrypt a string with a password. */
-export declare function encryptWithPassword(data: string, password: string, params?: Readonly<ScryptParams>): Promise<EncryptedPayload>;
-/** Decrypt a payload produced by encryptWithPassword with any parameter set. */
-export declare function decryptWithPassword(encryptedData: EncryptedPayload, password: string): Promise<string>;
-/** Build a wallet.json document from a mnemonic. */
+export declare function aesEncryptScrypt(data: string, password: string, params?: Readonly<ScryptParams>): Promise<EncryptedPayload>;
+/** Decrypt a payload produced by aesEncryptScrypt with any parameter set. */
+export declare function aesDecryptScrypt(encryptedData: EncryptedPayload, password: string): Promise<string>;
+/** Build a wallet.json document from a mnemonic; the phrase is validated and stored in its canonical form. */
 export declare function createWalletFile(mnemonic: string, password: string, options: WalletFileOptions): Promise<WalletData>;
+/** Build a wallet.json document around a raw private key, for an officer's recorded key. Same layout and cipher as the mnemonic file; the payload is {"privateKey"}. */
+export declare function createKeyFile(privateKeyHex: string, password: string, options: WalletFileOptions): Promise<WalletData>;
+/** Open a key file and return the private key (64 hex). */
+export declare function openKeyFile(walletData: WalletData, password: string): Promise<string>;
 /** Open a wallet.json document and return the mnemonic. */
 export declare function openWalletFile(walletData: WalletData, password: string): Promise<string>;
 /** Re-encrypt a wallet file under a new password, keeping network, createdAt and metadata. */

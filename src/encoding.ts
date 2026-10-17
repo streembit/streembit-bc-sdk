@@ -89,9 +89,9 @@ export function encodeDeterministicJSON(obj: unknown, options?: EncodeJSONOption
     return bytes;
 }
 
-export function decodeDeterministicJSON(data: Uint8Array): unknown {
+export function decodeDeterministicJSON<T = any>(data: Uint8Array): T {
     const json = new TextDecoder().decode(data);
-    return JSON.parse(json, bigIntReviver);
+    return JSON.parse(json, bigIntReviver) as T;
 }
 
 /** Lowercase hex. */
@@ -123,7 +123,7 @@ export function bytesToUtf8(bytes: Uint8Array): string {
     return new TextDecoder().decode(bytes);
 }
 
-export function concatBytes(...arrays: Uint8Array[]): Uint8Array<ArrayBuffer> {
+export function concat(...arrays: Uint8Array[]): Uint8Array<ArrayBuffer> {
     const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
     const result = new Uint8Array(totalLength);
     let offset = 0;

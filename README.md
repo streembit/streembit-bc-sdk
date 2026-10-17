@@ -8,8 +8,9 @@ wallet and the desktop wallet.
   the txid, signing through the `Signer` interface, the encrypted wallet file and its metadata.
 - `streembit-bc-sdk/api`: the client of the node's public HTTP API.
 
-Pure JavaScript only (`@noble/curves`, `@noble/hashes`, `@scure/bip32`, `@scure/bip39` and Web Crypto),
-no native modules and no WebAssembly. The same code runs in Node 22.12 or later, in a browser bundle and
+Pure JavaScript only (`@noble/curves`, `@noble/hashes`, `@scure/bip32`, `@scure/bip39`, `decimal.js` and
+Web Crypto), no native modules and no WebAssembly. Every function carries the name of the node function it
+replaces and behaves as that function does. The same code runs in Node 22.12 or later, in a browser bundle and
 in NW.js.
 Types and protocol constants come from `streembit-bc-types`; nothing is redeclared here.
 
@@ -28,6 +29,7 @@ from CommonJS.
 ## Usage
 
 ```typescript
+import { AssetId } from 'streembit-bc-types';
 import { generateMnemonic, seedFromMnemonic, deriveFromSeed, SoftwareSigner, buildTransferTx, signTransaction, txToString, createWalletFile, openWalletFile } from 'streembit-bc-sdk';
 import { configureApi, fetchStatus, fetchAccount, submitTransaction } from 'streembit-bc-sdk/api';
 
@@ -44,9 +46,9 @@ const restored = await openWalletFile(file, 'Correct-Horse#2026');
 configureApi('https://node.example.org');
 const status = await fetchStatus();
 const info = await fetchAccount(account.address);
-const tx = buildTransferTx({ chainId: status.chainId, version: status.version, from: account.address, to: 'S...', amount: '1.5', sequence: info.sequence + 1 });
+const tx = buildTransferTx({ chainId: status.chainId, version: status.version, from: account.address, to: 'S...', amount: '1.5', asset: AssetId.SBRIT, sequence: info.sequence + 1 });
 const signer = new SoftwareSigner(account.privateKey);
-await signTransaction(tx, signer);
+await signTransaction(tx, [signer]);   // refuses a signer that does not control tx.from
 signer.dispose();
 const { txid } = await submitTransaction(txToString(tx));
 ```
@@ -61,9 +63,9 @@ const { txid } = await submitTransaction(txToString(tx));
 | `address` | user and contract addresses, validation, `publicKeyOwnsAddress` |
 | `keys` | BIP39 mnemonic, BIP32 derivation on `m/44'/19640701'/<account>'/0/<index>` |
 | `signing` | ECDSA secp256k1 over SHA-256, DER, `Signer` and `SoftwareSigner` |
-| `transaction` | transfer and contract call builders, `serializeForSigning`, `computeTxId`, `serializeForAttestation` |
+| `transaction` | transfer and contract call builders, `serializeForSigning`, `computeTxId`, `serializeForAttestation`, `validateAmount`; multisig: `getTxSignatures`, `signTransaction`, `combineTxWithSigs`, `validateTransactionSignatures`, `validateTransactionAddressOwnership`, `pendingTxId` |
 | `metadata` | the wallet file's record of handed-out addresses and labels |
-| `walletfile` | wallet.json version 1: scrypt key derivation, AES-256-GCM, password policy |
+| `walletfile` | wallet.json version 1: scrypt key derivation, AES-256-GCM, password policy; two sealed payloads, `{mnemonic}` (`createWalletFile`, `openWalletFile`) and `{privateKey}` for an officer's recorded key (`createKeyFile`, `openKeyFile`); `metadata.kind` says which |
 | `api` | the Accountable Node API client (separate entry point) |
 
 The wallet file carries its scrypt parameters, so a file written with any parameter set opens with any

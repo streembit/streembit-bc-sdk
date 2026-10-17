@@ -17,13 +17,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PASSWORD_MIN_LENGTH = exports.DEFAULT_SCRYPT_PARAMS = exports.WALLET_KDF = exports.WALLET_VERSION = void 0;
 exports.validatePassword = validatePassword;
 exports.deriveKey = deriveKey;
-exports.encryptWithPassword = encryptWithPassword;
-exports.decryptWithPassword = decryptWithPassword;
+exports.aesEncryptScrypt = aesEncryptScrypt;
+exports.aesDecryptScrypt = aesDecryptScrypt;
 exports.createWalletFile = createWalletFile;
+exports.createKeyFile = createKeyFile;
+exports.openKeyFile = openKeyFile;
 exports.openWalletFile = openWalletFile;
 exports.changeWalletPassword = changeWalletPassword;
 const scrypt_js_1 = require("@noble/hashes/scrypt.js");
 const encoding_1 = require("./encoding");
+const keys_1 = require("./keys");
+const signing_1 = require("./signing");
 exports.WALLET_VERSION = 1;
 exports.WALLET_KDF = 'scrypt';
 const SALT_LENGTH = 32;
@@ -80,7 +84,7 @@ function deriveKey(password, salt, params) {
     return new Uint8Array(key);
 }
 /** Encrypt a string with a password. */
-async function encryptWithPassword(data, password, params = exports.DEFAULT_SCRYPT_PARAMS) {
+async function aesEncryptScrypt(data, password, params = exports.DEFAULT_SCRYPT_PARAMS) {
     const salt = (0, encoding_1.randomBytes)(SALT_LENGTH);
     const iv = (0, encoding_1.randomBytes)(IV_LENGTH);
     const keyBytes = deriveKey(password, salt, params);
@@ -97,8 +101,8 @@ async function encryptWithPassword(data, password, params = exports.DEFAULT_SCRY
         kdfParams: { ...params }
     };
 }
-/** Decrypt a payload produced by encryptWithPassword with any parameter set. */
-async function decryptWithPassword(encryptedData, password) {
+/** Decrypt a payload produced by aesEncryptScrypt with any parameter set. */
+async function aesDecryptScrypt(encryptedData, password) {
     if (encryptedData.kdf !== exports.WALLET_KDF) {
         throw new Error(`Unsupported key derivation: ${encryptedData.kdf}`);
     }
@@ -120,13 +124,16 @@ async function decryptWithPassword(encryptedData, password) {
     }
     return (0, encoding_1.bytesToUtf8)(new Uint8Array(plain));
 }
-/** Build a wallet.json document from a mnemonic. */
+/** Build a wallet.json document from a mnemonic; the phrase is validated and stored in its canonical form. */
 async function createWalletFile(mnemonic, password, options) {
+    if (!(0, keys_1.validateMnemonic)(mnemonic)) {
+        throw new Error('Invalid mnemonic phrase');
+    }
     const validation = validatePassword(password);
     if (!validation.isValid) {
         throw new Error(validation.error);
     }
-    const enc = await encryptWithPassword(JSON.stringify({ mnemonic }), password, options.kdfParams ?? exports.DEFAULT_SCRYPT_PARAMS);
+    const enc = await aesEncryptScrypt(JSON.stringify({ mnemonic: (0, keys_1.normalizeMnemonic)(mnemonic) }), password, options.kdfParams ?? exports.DEFAULT_SCRYPT_PARAMS);
     return {
         version: exports.WALLET_VERSION,
         encrypted: enc.encrypted,
@@ -137,18 +144,80 @@ async function createWalletFile(mnemonic, password, options) {
         kdfParams: enc.kdfParams,
         network: options.network,
         createdAt: new Date().toISOString(),
-        metadata: options.metadata ?? {}
+        metadata: { ...(options.metadata ?? {}), kind: 'mnemonic' }
     };
 }
-/** Open a wallet.json document and return the mnemonic. */
-async function openWalletFile(walletData, password) {
+/** 64 lower-case hex characters of a valid secp256k1 private key, or throws. */
+function validPrivateKey(privateKeyHex) {
+    const key = typeof privateKeyHex === 'string' ? privateKeyHex.trim().toLowerCase() : '';
+    if (!/^[0-9a-f]{64}$/.test(key)) {
+        throw new Error('Invalid private key');
+    }
+    let valid;
+    try {
+        valid = (0, signing_1.validateKeyPair)((0, signing_1.getPublicKey)(key), key);
+    }
+    catch {
+        throw new Error('Invalid private key');
+    }
+    if (!valid) {
+        throw new Error('Invalid private key');
+    }
+    return key;
+}
+/** Build a wallet.json document around a raw private key, for an officer's recorded key. Same layout and cipher as the mnemonic file; the payload is {"privateKey"}. */
+async function createKeyFile(privateKeyHex, password, options) {
+    const privateKey = validPrivateKey(privateKeyHex);
+    const validation = validatePassword(password);
+    if (!validation.isValid) {
+        throw new Error(validation.error);
+    }
+    const enc = await aesEncryptScrypt(JSON.stringify({ privateKey }), password, options.kdfParams ?? exports.DEFAULT_SCRYPT_PARAMS);
+    return {
+        version: exports.WALLET_VERSION,
+        encrypted: enc.encrypted,
+        salt: enc.salt,
+        iv: enc.iv,
+        authTag: enc.authTag,
+        kdf: enc.kdf,
+        kdfParams: enc.kdfParams,
+        network: options.network,
+        createdAt: new Date().toISOString(),
+        metadata: { ...(options.metadata ?? {}), kind: 'key' }
+    };
+}
+/** Decrypt a wallet.json document and return its payload object. */
+async function openPayload(walletData, password) {
+    const validation = validatePassword(password);
+    if (!validation.isValid) {
+        throw new Error(validation.error);
+    }
     if (!walletData || walletData.version !== exports.WALLET_VERSION) {
         throw new Error(`Unsupported wallet version: ${walletData && walletData.version}`);
     }
-    const decrypted = await decryptWithPassword(walletData, password);
-    const { mnemonic } = JSON.parse(decrypted);
+    const decrypted = await aesDecryptScrypt(walletData, password);
+    const payload = JSON.parse(decrypted);
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        throw new Error('Wallet file payload is not an object');
+    }
+    return payload;
+}
+/** Open a key file and return the private key (64 hex). */
+async function openKeyFile(walletData, password) {
+    const { privateKey } = await openPayload(walletData, password);
+    if (typeof privateKey !== 'string' || !privateKey) {
+        throw new Error('Wallet file does not contain a private key');
+    }
+    return validPrivateKey(privateKey);
+}
+/** Open a wallet.json document and return the mnemonic. */
+async function openWalletFile(walletData, password) {
+    const { mnemonic } = await openPayload(walletData, password);
     if (typeof mnemonic !== 'string' || !mnemonic) {
         throw new Error('Wallet file does not contain a mnemonic');
+    }
+    if (!(0, keys_1.validateMnemonic)(mnemonic)) {
+        throw new Error('Invalid mnemonic phrase');
     }
     return mnemonic;
 }
@@ -158,7 +227,20 @@ async function changeWalletPassword(walletData, currentPassword, newPassword, kd
     if (!validation.isValid) {
         throw new Error(validation.error);
     }
-    const mnemonic = await openWalletFile(walletData, currentPassword);
-    const enc = await encryptWithPassword(JSON.stringify({ mnemonic }), newPassword, kdfParams);
+    const payload = await openPayload(walletData, currentPassword);
+    let resealed;
+    if (typeof payload.mnemonic === 'string' && payload.mnemonic) {
+        if (!(0, keys_1.validateMnemonic)(payload.mnemonic)) {
+            throw new Error('Invalid mnemonic phrase');
+        }
+        resealed = JSON.stringify({ mnemonic: payload.mnemonic });
+    }
+    else if (typeof payload.privateKey === 'string' && payload.privateKey) {
+        resealed = JSON.stringify({ privateKey: validPrivateKey(payload.privateKey) });
+    }
+    else {
+        throw new Error('Wallet file does not contain a mnemonic or a private key');
+    }
+    const enc = await aesEncryptScrypt(resealed, newPassword, kdfParams);
     return { ...walletData, encrypted: enc.encrypted, salt: enc.salt, iv: enc.iv, authTag: enc.authTag, kdf: enc.kdf, kdfParams: enc.kdfParams };
 }

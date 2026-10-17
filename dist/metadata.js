@@ -14,10 +14,12 @@ exports.withAddressLabel = withAddressLabel;
 exports.addressLabel = addressLabel;
 /** Address lookup searches past the last tracked index by this many addresses (BIP44 gap limit). */
 exports.ADDRESS_GAP_LIMIT = 20;
-/** Account indexes tracked in the metadata; account 0 is always included. */
+/** Account indexes tracked in the metadata; account 0 when none is tracked. */
 function trackedAccounts(metadata) {
     const accounts = new Set(Object.keys(metadata?.lastUsedAddress || {}).map(Number));
-    accounts.add(0);
+    if (accounts.size === 0) {
+        accounts.add(0);
+    }
     return Array.from(accounts).sort((a, b) => a - b);
 }
 /** Highest address index handed out for an account, or -1 when none. */
@@ -49,7 +51,6 @@ function withNextAddress(metadata, accountIndex) {
     return {
         metadata: {
             ...(metadata || {}),
-            lastUsedAccount: accountIndex,
             lastUsedAddress: { ...(metadata?.lastUsedAddress || {}), [accountIndex]: addressIndex }
         },
         addressIndex

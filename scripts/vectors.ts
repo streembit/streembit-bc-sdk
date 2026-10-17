@@ -91,6 +91,15 @@ function signedTransaction(tx: Transaction, privateKey: string, publicKey: strin
     return { tx, preimageHex, txid: txid(tx) };
 }
 
+/** A second officer's detached signature over the same preimage, and the pending-store id of the unsigned call. */
+function cosigned(call: { tx: Transaction; preimageHex: string; txid: string }, cosigner: { privateKey: string; publicKey: string }): { tx: Transaction; preimageHex: string; txid: string; cosignature: { publickey: string; signature: string }; pendingTxId: string } {
+    return {
+        ...call,
+        cosignature: { publickey: cosigner.publicKey, signature: opensslSign(call.preimageHex, cosigner.privateKey) },
+        pendingTxId: blake2b256(Buffer.from(call.preimageHex, 'hex')).toString('hex')
+    };
+}
+
 /** OpenSSL scrypt with the default parameters and AES-256-GCM. */
 function encryptPayload(data: string, password: string): Record<string, unknown> {
     const salt = randomBytes(32);
@@ -134,7 +143,7 @@ async function main(): Promise<void> {
         validatorAttestations: []
     } as unknown as Transaction, sender.privateKey, sender.publicKey);
 
-    const contractCall = signedTransaction({
+    const contractCall = cosigned(signedTransaction({
         version: VERSION,
         chainId: CHAIN_ID,
         type: TxType.CONTRACT_CALL,
@@ -154,7 +163,7 @@ async function main(): Promise<void> {
         sandboxHash: 'cd'.repeat(32),
         cid: contract,
         location: ContractLocation.FS
-    } as unknown as Transaction, sender.privateKey, sender.publicKey);
+    } as unknown as Transaction, sender.privateKey, sender.publicKey), recipient);
 
     const vectors = {
         generatedBy: { repository: pkg.name, version: pkg.version, generatedAt: new Date().toISOString() },
@@ -176,7 +185,12 @@ async function main(): Promise<void> {
         signature: { dataHex: signatureDataHex, privateKey: sender.privateKey, publicKey: sender.publicKey, signature: opensslSign(signatureDataHex, sender.privateKey) },
         transfer,
         contractCall,
-        walletFile: { password: TEST_PASSWORD, mnemonic: TEST_MNEMONIC, payload: encryptPayload(JSON.stringify({ mnemonic: TEST_MNEMONIC }), TEST_PASSWORD) }
+        walletFile: {
+            password: TEST_PASSWORD,
+            mnemonic: TEST_MNEMONIC,
+            payload: encryptPayload(JSON.stringify({ mnemonic: TEST_MNEMONIC }), TEST_PASSWORD),
+            keyPayload: encryptPayload(JSON.stringify({ privateKey: sender.privateKey }), TEST_PASSWORD)
+        }
     };
 
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });

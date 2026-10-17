@@ -17,7 +17,7 @@ exports.bytesToHex = bytesToHex;
 exports.hexToBytes = hexToBytes;
 exports.utf8ToBytes = utf8ToBytes;
 exports.bytesToUtf8 = bytesToUtf8;
-exports.concatBytes = concatBytes;
+exports.concat = concat;
 exports.bytesToBase64 = bytesToBase64;
 exports.base64ToBytes = base64ToBytes;
 exports.randomBytes = randomBytes;
@@ -113,7 +113,7 @@ function utf8ToBytes(str) {
 function bytesToUtf8(bytes) {
     return new TextDecoder().decode(bytes);
 }
-function concatBytes(...arrays) {
+function concat(...arrays) {
     const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
     const result = new Uint8Array(totalLength);
     let offset = 0;

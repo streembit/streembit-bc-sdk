@@ -19,9 +19,11 @@ describe('wallet metadata', () => {
         assert.equal(second.addressIndex, 1);
         const other = M.withNextAddress(second.metadata, 3);
         assert.equal(other.addressIndex, 0);
-        assert.equal(other.metadata.lastUsedAccount, 3);
+        assert.equal(other.metadata.lastUsedAccount, undefined);
         assert.deepEqual(other.metadata.lastUsedAddress, { 0: 1, 3: 0 });
         assert.deepEqual(M.trackedAccounts(other.metadata), [0, 3]);
+        assert.deepEqual(M.trackedAccounts({ lastUsedAddress: { 3: 0 } }), [3], 'account 0 is implied only when nothing is tracked');
+        assert.deepEqual(M.knownAddressIndexes({ lastUsedAddress: { 3: 0 } }), [{ accountIndex: 3, addressIndex: 0 }]);
         assert.deepEqual(M.knownAddressIndexes(other.metadata), [
             { accountIndex: 0, addressIndex: 0 },
             { accountIndex: 0, addressIndex: 1 },
