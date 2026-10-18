@@ -6,7 +6,7 @@
  * blockchain repository), kept in one place so that a change is made here, and only here. Every response
  * is checked for the fields a wallet needs; a response of another shape is reported as an error instead
  * of producing a wrong transaction. The client carries only the calls a wallet makes today; the node
- * answers more (GET /api/v1/transactions/:txid, and status, asset and blockCount fields) that are added
+ * answers more (GET /api/v1/transactions/:txid, and the asset and blockCount record fields) that are added
  * here with their first caller.
  *
  *   GET  /api/v1/status                              -> { chainId, version, network, height }
@@ -185,6 +185,6 @@ function submitTransaction(txJson) {
     return request(ENDPOINTS.submit(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: txJson }, body => {
         if (!isRecord(body))
             throw new ApiError('The node API submission response is not an object');
-        return { txid: expectString(body, 'txid', 'submission') };
+        return { txid: expectString(body, 'txid', 'submission'), status: body.status === 'pending' ? 'pending' : 'included' };
     });
 }

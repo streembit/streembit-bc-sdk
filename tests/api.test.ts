@@ -28,7 +28,7 @@ function handle(req: IncomingMessage, res: ServerResponse): void {
         if (url === `/api/v1/accounts/${ACCOUNT}`) return reply(200, { address: ACCOUNT, balance: '12.5', sequence: 3 });
         if (url === `/api/v1/accounts/${ACCOUNT}/transactions?limit=2`) return reply(200, { transactions: [{ txid: 'a1', type: 'transfer', from: ACCOUNT, to: CONTRACT, amount: 1, timestamp: 5 }, 'junk'] });
         if (url === `/api/v1/contracts/${CONTRACT}`) return reply(200, { cid: CONTRACT, codeHash: 'ab', sandboxHash: 'cd', location: 'file_system' });
-        if (url === '/api/v1/transactions' && req.method === 'POST') return reply(200, { txid: 'f'.repeat(64) });
+        if (url === '/api/v1/transactions' && req.method === 'POST') return reply(200, { txid: 'f'.repeat(64), status: 'included' });
         if (url === '/api/v1/accounts/bad') return reply(200, { address: 'bad' });
         if (url === '/api/v1/accounts/html') { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<html>'); return; }
         reply(404, { error: 'not found' });
@@ -65,6 +65,7 @@ describe('Accountable Node API client', () => {
     it('submits the transaction JSON as the request body', async () => {
         const result = await api.submitTransaction('{"type":"transfer"}');
         assert.equal(result.txid, 'f'.repeat(64));
+        assert.equal(result.status, 'included');
         assert.equal(lastBody, '{"type":"transfer"}');
     });
 
