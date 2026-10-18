@@ -16,6 +16,11 @@
  * allow it (Access-Control-Allow-Origin for GET and POST with a JSON body, including the preflight).
  *
  * fetch and AbortController only; runs in Node, in the browser and in NW.js.
+ * 
+ *   An error answer is { error: <ErrorCode>, message, details } with a 4xx or 5xx status. request() turns
+ *   it into an ApiError whose message is the node's message, code the node's error, details its details
+ *   and status the HTTP status. A request that did not reach the node, or an answer that is not JSON,
+ *   is an ApiError with an empty code.
  */
 
 const ENDPOINTS = {
@@ -66,12 +71,19 @@ export interface SubmitResult {
 }
 
 export class ApiError extends Error {
+    /** HTTP status of the answer; 0 when the request did not reach the node. */
     public readonly status: number;
+    /** The node's error code, an ErrorCode name such as ERR_INSUFFICIENT_BALANCE; empty when the node sent none. */
+    public readonly code: string;
+    /** The node's details object, when it sent one. */
+    public readonly details: unknown;
 
-    constructor(message: string, status = 0) {
+    constructor(message: string, status = 0, code = '', details?: unknown) {
         super(message);
         this.name = 'ApiError';
         this.status = status;
+        this.code = code;
+        this.details = details;
     }
 }
 
@@ -110,8 +122,10 @@ async function request<T>(path: string, init: RequestInit, check: (body: unknown
         }
     }
     if (!response.ok) {
-        const message = isRecord(body) && typeof body.error === 'string' ? body.error : `HTTP ${response.status}`;
-        throw new ApiError(`The node API refused the request: ${message}`, response.status);
+        const code = isRecord(body) && typeof body.error === 'string' ? body.error : '';
+        const text = isRecord(body) && typeof body.message === 'string' && body.message ? body.message : code || `HTTP ${response.status}`;
+        const details = isRecord(body) ? body.details : undefined;
+        throw new ApiError(text, response.status, code, details);
     }
     return check(body);
 }
