@@ -356,7 +356,7 @@ export function validateTransactionSignatures(tx: Transaction): SignatureValidat
     return { valid: true };
 }
 
-/** Deterministic JSON the node accepts for submission . */
+/** Deterministic JSON the node accepts for submission */
 export function txToString(tx: Transaction): string {
     return encodeDeterministicJSON(tx, { asString: true });
 }
