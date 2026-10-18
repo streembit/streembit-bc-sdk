@@ -16,6 +16,11 @@
  * allow it (Access-Control-Allow-Origin for GET and POST with a JSON body, including the preflight).
  *
  * fetch and AbortController only; runs in Node, in the browser and in NW.js.
+ *
+ *   An error answer is { error: <ErrorCode>, message, details } with a 4xx or 5xx status. request() turns
+ *   it into an ApiError whose message is the node's message, code the node's error, details its details
+ *   and status the HTTP status. A request that did not reach the node, or an answer that is not JSON,
+ *   is an ApiError with an empty code.
  */
 export interface ChainStatus {
     chainId: number;
@@ -50,8 +55,13 @@ export interface SubmitResult {
     txid: string;
 }
 export declare class ApiError extends Error {
+    /** HTTP status of the answer; 0 when the request did not reach the node. */
     readonly status: number;
-    constructor(message: string, status?: number);
+    /** The node's error code, an ErrorCode name such as ERR_INSUFFICIENT_BALANCE; empty when the node sent none. */
+    readonly code: string;
+    /** The node's details object, when it sent one. */
+    readonly details: unknown;
+    constructor(message: string, status?: number, code?: string, details?: unknown);
 }
 /** Base URL of the node API, without a trailing slash. */
 export declare function configureApi(url: string): void;

@@ -17,6 +17,11 @@
  * allow it (Access-Control-Allow-Origin for GET and POST with a JSON body, including the preflight).
  *
  * fetch and AbortController only; runs in Node, in the browser and in NW.js.
+ *
+ *   An error answer is { error: <ErrorCode>, message, details } with a 4xx or 5xx status. request() turns
+ *   it into an ApiError whose message is the node's message, code the node's error, details its details
+ *   and status the HTTP status. A request that did not reach the node, or an answer that is not JSON,
+ *   is an ApiError with an empty code.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ApiError = void 0;
@@ -36,11 +41,18 @@ const ENDPOINTS = {
 };
 const REQUEST_TIMEOUT_MS = 10000;
 class ApiError extends Error {
+    /** HTTP status of the answer; 0 when the request did not reach the node. */
     status;
-    constructor(message, status = 0) {
+    /** The node's error code, an ErrorCode name such as ERR_INSUFFICIENT_BALANCE; empty when the node sent none. */
+    code;
+    /** The node's details object, when it sent one. */
+    details;
+    constructor(message, status = 0, code = '', details) {
         super(message);
         this.name = 'ApiError';
         this.status = status;
+        this.code = code;
+        this.details = details;
     }
 }
 exports.ApiError = ApiError;
@@ -79,8 +91,10 @@ async function request(path, init, check) {
         }
     }
     if (!response.ok) {
-        const message = isRecord(body) && typeof body.error === 'string' ? body.error : `HTTP ${response.status}`;
-        throw new ApiError(`The node API refused the request: ${message}`, response.status);
+        const code = isRecord(body) && typeof body.error === 'string' ? body.error : '';
+        const text = isRecord(body) && typeof body.message === 'string' && body.message ? body.message : code || `HTTP ${response.status}`;
+        const details = isRecord(body) ? body.details : undefined;
+        throw new ApiError(text, response.status, code, details);
     }
     return check(body);
 }
