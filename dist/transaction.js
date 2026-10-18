@@ -296,7 +296,7 @@ function validateTransactionSignatures(tx) {
     }
     return { valid: true };
 }
-/** JSON the node accepts for submission (plain JSON.stringify). */
+/** Deterministic JSON the node accepts for submission . */
 function txToString(tx) {
-    return JSON.stringify(tx);
+    return (0, encoding_1.encodeDeterministicJSON)(tx, { asString: true });
 }

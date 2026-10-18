@@ -92,6 +92,6 @@ export declare function validateTransactionAddressOwnership(tx: Transaction): bo
 export declare function combineTxWithSigs(tx: ContractCallTransaction, signatures: TransactionSignature[]): ContractCallTransaction;
 /** The node's signature rules: non-empty, at most MAX_ALLOWED_SIGNATURES, unique public keys, every signature verifies over the preimage. */
 export declare function validateTransactionSignatures(tx: Transaction): SignatureValidationResult;
-/** JSON the node accepts for submission (plain JSON.stringify). */
+/** Deterministic JSON the node accepts for submission . */
 export declare function txToString(tx: Transaction): string;
 //# sourceMappingURL=transaction.d.ts.map
