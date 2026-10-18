@@ -249,7 +249,8 @@ describe(`Wallet core against the vectors (${vectors.generatedBy.repository} ${v
             assert.deepEqual({ ...tx, signature: undefined }, { ...v.tx, signature: undefined });
             assert.equal(tx.signature[0].publickey, v.tx.signature[0].publickey);
             assert.ok(W.validateTransactionSignatures(tx).valid);
-            assert.equal(W.txToString(tx), JSON.stringify(tx));
+            assert.equal(W.txToString(tx), W.encodeDeterministicJSON(tx, { asString: true }));
+            assert.deepEqual(JSON.parse(W.txToString(tx)), JSON.parse(JSON.stringify(tx)));
         });
 
         it('builds an SSC transfer with the SSC fee and refuses an unknown asset', () => {
@@ -376,15 +377,15 @@ describe(`Wallet core against the vectors (${vectors.generatedBy.repository} ${v
             assert.ok(!W.validatePassword('').isValid);
         });
 
-        it('the scrypt key equals OpenSSL scrypt for a fresh salt, and refuses bad parameters', () => {
+        it('the scrypt key equals OpenSSL scrypt for a fresh salt, and refuses bad parameters', async () => {
             const salt = W.randomBytes(32);
             const params = { N: 2 ** 14, r: 8, p: 1, dkLen: 32 };
             const expected = scryptSync('Wallet-File#2026', salt, 32, { N: params.N, r: params.r, p: params.p });
-            assert.equal(hex(W.deriveKey('Wallet-File#2026', salt, params)), expected.toString('hex'));
-            assert.equal(hex(W.deriveKey('Wallet-File#2026', salt, { ...params, p: 2 })), scryptSync('Wallet-File#2026', salt, 32, { N: params.N, r: 8, p: 2 }).toString('hex'));
-            assert.throws(() => W.deriveKey('x', salt, { ...params, N: 1000 }));
-            assert.throws(() => W.deriveKey('x', salt, { ...params, dkLen: 16 }));
-            assert.throws(() => W.deriveKey('x', salt, { ...params, r: 0 }));
+            assert.equal(hex(await W.deriveKey('Wallet-File#2026', salt, params)), expected.toString('hex'));
+            assert.equal(hex(await W.deriveKey('Wallet-File#2026', salt, { ...params, p: 2 })), scryptSync('Wallet-File#2026', salt, 32, { N: params.N, r: 8, p: 2 }).toString('hex'));
+            await assert.rejects(W.deriveKey('x', salt, { ...params, N: 1000 }));
+            await assert.rejects(W.deriveKey('x', salt, { ...params, dkLen: 16 }));
+            await assert.rejects(W.deriveKey('x', salt, { ...params, r: 0 }));
         });
 
         it('opens the payload encrypted by OpenSSL scrypt and AES-GCM with the default parameters', async () => {

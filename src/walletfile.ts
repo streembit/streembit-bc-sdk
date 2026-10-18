@@ -9,11 +9,11 @@
  *
  * scrypt runs through @noble/hashes (pure JavaScript, audited) and AES-GCM through Web Crypto, in Node,
  * in the browser and in NW.js. The parameters are read from the file, so a file written with one
- * parameter set opens with any client. The derivation is synchronous and takes a few hundred
- * milliseconds at the default cost; a page that must stay responsive runs it in a Web Worker.
+ * parameter set opens with any client. The derivation yields to the event loop while it runs, so a page
+ * stays responsive; it takes a few hundred milliseconds at the default cost.
  */
 
-import { scrypt } from '@noble/hashes/scrypt.js';
+import { scryptAsync } from '@noble/hashes/scrypt.js';
 import { bytesToBase64, base64ToBytes, utf8ToBytes, bytesToUtf8, randomBytes } from './encoding';
 import { validateMnemonic, normalizeMnemonic } from './keys';
 import { getPublicKey, validateKeyPair } from './signing';
@@ -111,9 +111,9 @@ function validateScryptParams(params: ScryptParams): void {
 }
 
 /** The AES-256 key: scrypt of the password and salt with the given parameters. */
-export function deriveKey(password: string, salt: Uint8Array, params: ScryptParams): Uint8Array<ArrayBuffer> {
+export async function deriveKey(password: string, salt: Uint8Array, params: ScryptParams): Promise<Uint8Array<ArrayBuffer>> {
     validateScryptParams(params);
-    const key = scrypt(utf8ToBytes(password), salt, { N: params.N, r: params.r, p: params.p, dkLen: params.dkLen, maxmem: 128 * params.r * (params.N + params.p + 1) + 1024 });
+    const key = await scryptAsync(utf8ToBytes(password), salt, { N: params.N, r: params.r, p: params.p, dkLen: params.dkLen, maxmem: 128 * params.r * (params.N + params.p + 1) + 1024 });
     return new Uint8Array(key);
 }
 
@@ -121,7 +121,7 @@ export function deriveKey(password: string, salt: Uint8Array, params: ScryptPara
 export async function aesEncryptScrypt(data: string, password: string, params: Readonly<ScryptParams> = DEFAULT_SCRYPT_PARAMS): Promise<EncryptedPayload> {
     const salt = randomBytes(SALT_LENGTH);
     const iv = randomBytes(IV_LENGTH);
-    const keyBytes = deriveKey(password, salt, params);
+    const keyBytes = await deriveKey(password, salt, params);
     const key = await globalThis.crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['encrypt']);
     const sealed = new Uint8Array(await globalThis.crypto.subtle.encrypt(
         { name: 'AES-GCM', iv, tagLength: TAG_LENGTH_BYTES * 8 },
@@ -149,7 +149,7 @@ export async function aesDecryptScrypt(encryptedData: EncryptedPayload, password
     const salt = base64ToBytes(encryptedData.salt);
     const iv = base64ToBytes(encryptedData.iv);
     const authTag = base64ToBytes(encryptedData.authTag);
-    const keyBytes = deriveKey(password, salt, encryptedData.kdfParams);
+    const keyBytes = await deriveKey(password, salt, encryptedData.kdfParams);
     const key = await globalThis.crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['decrypt']);
     const sealed = new Uint8Array(ciphertext.length + authTag.length);
     sealed.set(ciphertext);

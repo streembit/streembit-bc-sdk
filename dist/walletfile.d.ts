@@ -9,8 +9,8 @@
  *
  * scrypt runs through @noble/hashes (pure JavaScript, audited) and AES-GCM through Web Crypto, in Node,
  * in the browser and in NW.js. The parameters are read from the file, so a file written with one
- * parameter set opens with any client. The derivation is synchronous and takes a few hundred
- * milliseconds at the default cost; a page that must stay responsive runs it in a Web Worker.
+ * parameter set opens with any client. The derivation yields to the event loop while it runs, so a page
+ * stays responsive; it takes a few hundred milliseconds at the default cost.
  */
 import type { WalletMetadata } from './metadata';
 export declare const WALLET_VERSION = 1;
@@ -56,7 +56,7 @@ export declare const PASSWORD_MIN_LENGTH = 12;
 /** Minimum 12 characters with a lowercase letter, an uppercase letter, a digit and a special character. */
 export declare function validatePassword(password: string): PasswordValidation;
 /** The AES-256 key: scrypt of the password and salt with the given parameters. */
-export declare function deriveKey(password: string, salt: Uint8Array, params: ScryptParams): Uint8Array<ArrayBuffer>;
+export declare function deriveKey(password: string, salt: Uint8Array, params: ScryptParams): Promise<Uint8Array<ArrayBuffer>>;
 /** Encrypt a string with a password. */
 export declare function aesEncryptScrypt(data: string, password: string, params?: Readonly<ScryptParams>): Promise<EncryptedPayload>;
 /** Decrypt a payload produced by aesEncryptScrypt with any parameter set. */
