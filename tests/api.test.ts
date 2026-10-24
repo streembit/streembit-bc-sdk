@@ -1,5 +1,6 @@
 /**
- * The API client against a local HTTP server that answers like the Accountable Node is expected to.
+ * The API client against local HTTP servers that answer like the Accountable Node and a read mirror are
+ * expected to, and the routing of each call to the node address or the read address.
  */
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,7 +15,9 @@ const CONTRACT = 'CPnsvUmZ6imsKM1QYi5Bbi3cG2UUY5Dgm2';
 let server: Server;
 let lastBody = '';
 
-function handle(req: IncomingMessage, res: ServerResponse): void {
+/** Answers like the node; records the paths it was asked, for the routing tests. */
+function handle(req: IncomingMessage, res: ServerResponse, hits: string[] = []): void {
+    hits.push(`${req.method} ${req.url}`);
     let data = '';
     req.on('data', chunk => { data += chunk; });
     req.on('end', () => {
@@ -80,5 +83,92 @@ describe('Accountable Node API client', () => {
         api.configureApi('');
         await assert.rejects(api.fetchStatus(), (err: unknown) => err instanceof api.ApiError);
         api.configureApi(configured);
+    });
+});
+
+describe('Node address and read address', () => {
+    let node: Server;
+    let read: Server;
+    let nodeUrl = '';
+    let readUrl = '';
+    const nodeHits: string[] = [];
+    const readHits: string[] = [];
+
+    async function listen(hits: string[]): Promise<{ server: Server; url: string }> {
+        const server = createServer((req, res) => handle(req, res, hits));
+        await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+        const address = server.address();
+        if (!address || typeof address === 'string') throw new Error('server has no port');
+        return { server, url: `http://127.0.0.1:${address.port}` };
+    }
+
+    /** Every call the wallet makes, in the shape the routing is checked against. */
+    async function everyCall(): Promise<void> {
+        await api.fetchStatus();
+        await api.fetchAccount(ACCOUNT);
+        await api.fetchTransactions(ACCOUNT, 2);
+        await api.fetchContract(CONTRACT);
+        await api.submitTransaction('{"type":"transfer"}');
+        await api.fetchStatus('node');
+        await api.fetchAccount(ACCOUNT, 'node');
+    }
+
+    function clearHits(): void {
+        nodeHits.length = 0;
+        readHits.length = 0;
+    }
+
+    before(async () => {
+        ({ server: node, url: nodeUrl } = await listen(nodeHits));
+        ({ server: read, url: readUrl } = await listen(readHits));
+    });
+
+    after(async () => {
+        api.configureReadApi('');
+        await new Promise<void>(resolve => node.close(() => resolve()));
+        await new Promise<void>(resolve => read.close(() => resolve()));
+    });
+
+    it('sends every call to the node address while no read address is configured', async () => {
+        api.configureApi(nodeUrl);
+        api.configureReadApi('');
+        assert.equal(api.readApiBaseUrl(), nodeUrl);
+        clearHits();
+        await everyCall();
+        assert.equal(nodeHits.length, 7);
+        assert.deepEqual(readHits, []);
+    });
+
+    it('sends reads to the read address, and submission, contracts and the node reads to the node address', async () => {
+        api.configureApi(nodeUrl);
+        api.configureReadApi(`${readUrl}/`);
+        assert.equal(api.apiBaseUrl(), nodeUrl);
+        assert.equal(api.readApiBaseUrl(), readUrl);
+        clearHits();
+        await everyCall();
+        assert.deepEqual(readHits, [
+            'GET /api/v1/status',
+            `GET /api/v1/accounts/${ACCOUNT}`,
+            `GET /api/v1/accounts/${ACCOUNT}/transactions?limit=2`
+        ]);
+        assert.deepEqual(nodeHits, [
+            `GET /api/v1/contracts/${CONTRACT}`,
+            'POST /api/v1/transactions',
+            'GET /api/v1/status',
+            `GET /api/v1/accounts/${ACCOUNT}`
+        ]);
+    });
+
+    it('names the address that failed in the error message', async () => {
+        const closed = await listen([]);
+        await new Promise<void>(resolve => closed.server.close(() => resolve()));
+        api.configureApi(nodeUrl);
+        api.configureReadApi(closed.url);
+        await assert.rejects(api.fetchStatus(), (err: unknown) => err instanceof api.ApiError && err.message.startsWith(`The read API at ${closed.url} did not answer`));
+        await api.fetchStatus('node');
+        api.configureApi(closed.url);
+        api.configureReadApi(readUrl);
+        await assert.rejects(api.submitTransaction('{}'), (err: unknown) => err instanceof api.ApiError && err.message.startsWith(`The node API at ${closed.url} did not answer`));
+        await assert.rejects(api.fetchAccount('bad'), (err: unknown) => err instanceof api.ApiError && err.message.startsWith(`The read API at ${readUrl}: `) && /"balance"/.test(err.message));
     });
 });

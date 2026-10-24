@@ -21,15 +21,28 @@
  *                                                       202 status pending: still processing when the
  *                                                       node's wait ended; 400 when rejected
  *
+ * Two addresses. The node address (configureApi) is the Accountable Node itself: submission and contract
+ * metadata always go there. The read address (configureReadApi) is a read mirror that serves status,
+ * account and history with the same paths and shapes, so that wallet and explorer reads do not load the
+ * node; while no read address is configured, reads go to the node address, so a consumer that calls
+ * configureApi only sees no change.
+ *
+ * Sequence rule: a transaction is built from the node's state, never from the read address. The mirror
+ * can be a block or two behind the node, and a quick second send built on its sequence would reuse a
+ * sequence and be rejected. Code that builds a transaction reads fetchStatus('node') and
+ * fetchAccount(address, 'node'); balances, history and the status display use the read address.
+ *
  * A browser wallet calls the API from another origin, so the node answers with CORS headers for the
- * origins in its rest.corsOrigins configuration (GET and POST with a JSON body, including the preflight).
+ * origins in its rest.corsOrigins configuration (GET and POST with a JSON body, including the preflight),
+ * and the read mirror answers its GET routes with Access-Control-Allow-Origin: *.
  *
  * fetch and AbortController only; runs in Node, in the browser and in NW.js.
  *
  * An error answer is { error: <ErrorCode>, message, details } with a 4xx or 5xx status. request() turns
  * it into an ApiError whose message is the node's message, code the node's error, details its details
- * and status the HTTP status. A request that did not reach the node, or an answer that is not JSON,
- * is an ApiError with an empty code.
+ * and status the HTTP status. A request that did not reach the server, an answer that is not JSON or
+ * an answer without a required field is an ApiError with an empty code, and its message names the address
+ * it called: "the node API at <url>" or "the read API at <url>".
  */
 export interface ChainStatus {
     chainId: number;
@@ -74,17 +87,31 @@ export declare class ApiError extends Error {
     readonly details: unknown;
     constructor(message: string, status?: number, code?: string, details?: unknown);
 }
-/** Base URL of the node API, without a trailing slash. */
+/** Which address a call goes to: the Accountable Node, or the read address (the node while none is configured). */
+export type ApiAddress = 'node' | 'read';
+/** Base URL of the node API, without a trailing slash. Reads use it too while no read address is configured. */
 export declare function configureApi(url: string): void;
+/** Base URL of the read API (a read mirror), without a trailing slash; an empty string sends reads to the node again. */
+export declare function configureReadApi(url: string): void;
+/** The node address. */
 export declare function apiBaseUrl(): string;
-/** Chain id, protocol version and network name; the values every transaction and wallet file carries. */
-export declare function fetchStatus(): Promise<ChainStatus>;
-/** Balance and current sequence of an address. An unknown address is reported as balance 0, sequence 0 by the node. */
-export declare function fetchAccount(address: string): Promise<AccountInfo>;
-/** Most recent transactions of an address, newest first. */
+/** The read address, or the node address while no read address is configured. */
+export declare function readApiBaseUrl(): string;
+/**
+ * Chain id, protocol version, network name and height. From the read address by default; code that builds a
+ * transaction passes 'node' (see the sequence rule above).
+ */
+export declare function fetchStatus(from?: ApiAddress): Promise<ChainStatus>;
+/**
+ * Balance and current sequence of an address; an unknown address is answered as balance 0, sequence 0. From
+ * the read address by default; the sequence of a transaction being built is read with 'node' (see the
+ * sequence rule above).
+ */
+export declare function fetchAccount(address: string, from?: ApiAddress): Promise<AccountInfo>;
+/** Most recent transactions of an address, newest first. From the read address. */
 export declare function fetchTransactions(address: string, limit?: number): Promise<TransactionRecord[]>;
-/** The contract metadata a call transaction must carry: what the node reads from acct/<cid>/meta. */
+/** The contract metadata a call transaction must carry: what the node reads from acct/<cid>/meta. From the node address. */
 export declare function fetchContract(cid: string): Promise<ContractMeta>;
-/** Submit a signed transaction (the JSON txToString produces). */
+/** Submit a signed transaction (the JSON txToString produces) to the node address. */
 export declare function submitTransaction(txJson: string): Promise<SubmitResult>;
 //# sourceMappingURL=api.d.ts.map

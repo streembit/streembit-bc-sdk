@@ -7,7 +7,7 @@ wallet and the desktop wallet.
 - `streembit-bc-sdk`: key creation, HD derivation, addresses, transaction building, the signing preimage,
   the txid, signing through the `Signer` interface, the encrypted wallet file and its metadata, and the
   block hash and creator block signature that the node and the read mirror verify.
-- `streembit-bc-sdk/api`: the client of the node's public HTTP API.
+- `streembit-bc-sdk/api`: the client of the node's public HTTP API and of a read mirror that serves its read routes.
 
 Pure JavaScript only (`@noble/curves`, `@noble/hashes`, `@scure/bip32`, `@scure/bip39`, `decimal.js` and
 Web Crypto), no native modules and no WebAssembly. Every function carries the name of the node function it
@@ -32,7 +32,7 @@ from CommonJS.
 ```typescript
 import { AssetId } from 'streembit-bc-types';
 import { generateMnemonic, seedFromMnemonic, deriveFromSeed, SoftwareSigner, buildTransferTx, signTransaction, txToString, createWalletFile, openWalletFile } from 'streembit-bc-sdk';
-import { configureApi, fetchStatus, fetchAccount, submitTransaction } from 'streembit-bc-sdk/api';
+import { configureApi, configureReadApi, fetchStatus, fetchAccount, submitTransaction } from 'streembit-bc-sdk/api';
 
 // Keys: derive the seed once per session, then accounts from it.
 const mnemonic = generateMnemonic();
@@ -43,16 +43,36 @@ const account = deriveFromSeed(seed, 0, 0);          // { path, privateKey, publ
 const file = await createWalletFile(mnemonic, 'Correct-Horse#2026', { network: 'devnet' });
 const restored = await openWalletFile(file, 'Correct-Horse#2026');
 
-// A transfer: chain id, version and the next sequence come from the node.
+// A transfer: chain id, version and the next sequence come from the node, never from the read address.
 configureApi('https://node.example.org');
-const status = await fetchStatus();
-const info = await fetchAccount(account.address);
+configureReadApi('https://mirror.example.org');      // optional; balances, history and status are read here
+const status = await fetchStatus('node');
+const info = await fetchAccount(account.address, 'node');
 const tx = buildTransferTx({ chainId: status.chainId, version: status.version, from: account.address, to: 'S...', amount: '1.5', asset: AssetId.SBRIT, sequence: info.sequence + 1 });
 const signer = new SoftwareSigner(account.privateKey);
 await signTransaction(tx, [signer]);   // refuses a signer that does not control tx.from
 signer.dispose();
 const { txid } = await submitTransaction(txToString(tx));
 ```
+
+## Node address and read address
+
+The API client calls two addresses:
+
+| Address | Set by | Calls |
+|---|---|---|
+| node | `configureApi(url)`, read back with `apiBaseUrl()` | `submitTransaction`, `fetchContract`, and `fetchStatus('node')`, `fetchAccount(address, 'node')` |
+| read | `configureReadApi(url)`, read back with `readApiBaseUrl()` | `fetchStatus()`, `fetchAccount(address)`, `fetchTransactions(address)` |
+
+The read address is a read mirror that serves the node's read routes with the same paths and response shapes.
+While none is configured (or after `configureReadApi('')`), `readApiBaseUrl()` returns the node address and every
+call goes to the node, so a consumer that calls `configureApi` only works as before. An error the client raises
+itself (no answer, an answer that is not JSON or lacks a field) names the address it called, "The node API at
+<url>" or "The read API at <url>"; an error answer keeps the server's own message.
+
+Sequence rule: build a transaction from the node's state. The mirror can be a block or two behind the node, and a
+second send built on its sequence would reuse a sequence and be rejected, so the chain id, the version and the
+sequence of a transaction being built are read with `fetchStatus('node')` and `fetchAccount(address, 'node')`.
 
 ## Modules
 
