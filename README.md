@@ -5,7 +5,8 @@ every byte a wallet produces and the node verifies, used by the node, the CLI wa
 wallet and the desktop wallet.
 
 - `streembit-bc-sdk`: key creation, HD derivation, addresses, transaction building, the signing preimage,
-  the txid, signing through the `Signer` interface, the encrypted wallet file and its metadata.
+  the txid, signing through the `Signer` interface, the encrypted wallet file and its metadata, and the
+  block hash and creator block signature that the node and the read mirror verify.
 - `streembit-bc-sdk/api`: the client of the node's public HTTP API.
 
 Pure JavaScript only (`@noble/curves`, `@noble/hashes`, `@scure/bip32`, `@scure/bip39`, `decimal.js` and

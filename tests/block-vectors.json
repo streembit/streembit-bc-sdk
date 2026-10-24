@@ -1,0 +1,345 @@
+{
+  "privateKey": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1",
+  "publicKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+  "creatorId": "zovolt",
+  "cases": {
+    "plain": {
+      "amounts": [
+        "5",
+        "0.01"
+      ],
+      "txids": [
+        "57d82f2d4485500e38cef7e957c379999a0bd079244bf6210e0f72fa1a7ce41b",
+        "33ee72bf15b3a7c496e376477b723c01508a7187777f4c65fce1c397c896484a"
+      ],
+      "totalValue": "5.01",
+      "preimageHex": "390500007be7e5f1990100003537643832663264343438353530306533386365663765393537633337393939396130626430373932343462663632313065306637326661316137636534316233336565373262663135623361376334393665333736343737623732336330313530386137313837373737663463363566636531633339376338393634383461352e30317a6f766f6c74",
+      "preimageHashHex": "7a11248ca9e1eb01583a830835327b6a75ff7711e5a500f64c168937265a681a",
+      "blockHash": "88078028d57f9d2a6a2fb6bf140da3eada260d3d3b98aec2b818ec1253f8e1e5",
+      "signature": "3045022100d8a765d9b3aed01b42f5c58155ecbbe100ef55ba00261068162da528d80b41dc02207d494ebb835ccb1b7b0ed4dd36bf4d864a10af1faa2416b2b9d41841c0c8b391",
+      "block": {
+        "header": {
+          "chainId": 1337,
+          "version": 1,
+          "txRoot": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+          "timestamp": 1760700000123,
+          "creatorApproval": {
+            "creatorId": "zovolt",
+            "creatorPubKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+            "signature": "3045022100d8a765d9b3aed01b42f5c58155ecbbe100ef55ba00261068162da528d80b41dc02207d494ebb835ccb1b7b0ed4dd36bf4d864a10af1faa2416b2b9d41841c0c8b391"
+          }
+        },
+        "transactions": [
+          {
+            "version": 1,
+            "chainId": 1337,
+            "type": "transfer",
+            "from": "SFrom1",
+            "to": "STo1",
+            "amount": "5",
+            "asset": "SBRIT",
+            "sequence": 1,
+            "timestamp": 1760700000001,
+            "salt": "abababababababababababababababab",
+            "fee": {
+              "amount": "0.01",
+              "asset": "SBRIT",
+              "to": "SValidator"
+            },
+            "signature": [
+              {
+                "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+                "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+              }
+            ],
+            "validatorAttestations": []
+          },
+          {
+            "version": 1,
+            "chainId": 1337,
+            "type": "transfer",
+            "from": "SFrom2",
+            "to": "STo2",
+            "amount": "0.01",
+            "asset": "SBRIT",
+            "sequence": 2,
+            "timestamp": 1760700000002,
+            "salt": "abababababababababababababababab",
+            "fee": {
+              "amount": "0.01",
+              "asset": "SBRIT",
+              "to": "SValidator"
+            },
+            "signature": [
+              {
+                "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+                "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+              }
+            ],
+            "validatorAttestations": []
+          }
+        ]
+      }
+    },
+    "zero": {
+      "amounts": [
+        "0"
+      ],
+      "txids": [
+        "bb2c31af80e8c220111e87345383d99d3fe76d8242533376e1fdc0d3e30f972b"
+      ],
+      "totalValue": "0",
+      "preimageHex": "390500007be7e5f19901000062623263333161663830653863323230313131653837333435333833643939643366653736643832343235333333373665316664633064336533306639373262307a6f766f6c74",
+      "preimageHashHex": "bee4f3c0a921d4c859695e36f3e0da772199e211f67b97a1c2810924410838f0",
+      "blockHash": "88078028d57f9d2a6a2fb6bf140da3eada260d3d3b98aec2b818ec1253f8e1e5",
+      "signature": "3045022100b9a297d46c84ead00ebaf5be22fb67cc5e4c885a872a0e70bbac4a9dbbc9d1e902206ecc992645af484d29b179920df2eb9fe2bae2349acb5fd680ba4944186563a9",
+      "block": {
+        "header": {
+          "chainId": 1337,
+          "version": 1,
+          "txRoot": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+          "timestamp": 1760700000123,
+          "creatorApproval": {
+            "creatorId": "zovolt",
+            "creatorPubKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+            "signature": "3045022100b9a297d46c84ead00ebaf5be22fb67cc5e4c885a872a0e70bbac4a9dbbc9d1e902206ecc992645af484d29b179920df2eb9fe2bae2349acb5fd680ba4944186563a9"
+          }
+        },
+        "transactions": [
+          {
+            "version": 1,
+            "chainId": 1337,
+            "type": "transfer",
+            "from": "SFrom1",
+            "to": "STo1",
+            "amount": "0",
+            "asset": "SBRIT",
+            "sequence": 1,
+            "timestamp": 1760700000001,
+            "salt": "abababababababababababababababab",
+            "fee": {
+              "amount": "0.01",
+              "asset": "SBRIT",
+              "to": "SValidator"
+            },
+            "signature": [
+              {
+                "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+                "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+              }
+            ],
+            "validatorAttestations": []
+          }
+        ]
+      }
+    },
+    "tiny": {
+      "amounts": [
+        "0.00000001"
+      ],
+      "txids": [
+        "8f63aea692c3ac8faddaf23523710a923753353721ef2ad0bd9b18d7fd96034b"
+      ],
+      "totalValue": "0.00000001",
+      "preimageHex": "390500007be7e5f19901000038663633616561363932633361633866616464616632333532333731306139323337353333353337323165663261643062643962313864376664393630333462302e30303030303030317a6f766f6c74",
+      "preimageHashHex": "eab0e42d74ca104500359b39ce6b236b90ad6ebcd175ab3e8d421c5220f7b957",
+      "blockHash": "88078028d57f9d2a6a2fb6bf140da3eada260d3d3b98aec2b818ec1253f8e1e5",
+      "signature": "30440220766342a56e8345d4c5a00cdeca0ed66ad900e44eaf6a12ae7b5ee0961db27ecf022005778cd089358919cb85769af3a932a31920d8bb528e444d1c6ed0de85ddc977",
+      "block": {
+        "header": {
+          "chainId": 1337,
+          "version": 1,
+          "txRoot": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+          "timestamp": 1760700000123,
+          "creatorApproval": {
+            "creatorId": "zovolt",
+            "creatorPubKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+            "signature": "30440220766342a56e8345d4c5a00cdeca0ed66ad900e44eaf6a12ae7b5ee0961db27ecf022005778cd089358919cb85769af3a932a31920d8bb528e444d1c6ed0de85ddc977"
+          }
+        },
+        "transactions": [
+          {
+            "version": 1,
+            "chainId": 1337,
+            "type": "transfer",
+            "from": "SFrom1",
+            "to": "STo1",
+            "amount": "0.00000001",
+            "asset": "SBRIT",
+            "sequence": 1,
+            "timestamp": 1760700000001,
+            "salt": "abababababababababababababababab",
+            "fee": {
+              "amount": "0.01",
+              "asset": "SBRIT",
+              "to": "SValidator"
+            },
+            "signature": [
+              {
+                "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+                "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+              }
+            ],
+            "validatorAttestations": []
+          }
+        ]
+      }
+    },
+    "huge": {
+      "amounts": [
+        "1000000000000000000000"
+      ],
+      "txids": [
+        "c76b3a91f95c702b108c388cff578ab88ce20bc003537b9568ebdee662ce837b"
+      ],
+      "totalValue": "1000000000000000000000",
+      "preimageHex": "390500007be7e5f19901000063373662336139316639356337303262313038633338386366663537386162383863653230626330303335333762393536386562646565363632636538333762313030303030303030303030303030303030303030307a6f766f6c74",
+      "preimageHashHex": "fcb805605f4ff08a8f47008c0fdb863be23d8dcb5dea0e6e899870db234ecf2b",
+      "blockHash": "88078028d57f9d2a6a2fb6bf140da3eada260d3d3b98aec2b818ec1253f8e1e5",
+      "signature": "3045022100f85c0b98d3f0bb39a93c009476405e7651bb5d8fe2f6c2400c87fe8105165ea10220761553fdb07c250bef771f061ea6cb397b8d29fc446a28da04010afd6757acf0",
+      "block": {
+        "header": {
+          "chainId": 1337,
+          "version": 1,
+          "txRoot": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+          "timestamp": 1760700000123,
+          "creatorApproval": {
+            "creatorId": "zovolt",
+            "creatorPubKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+            "signature": "3045022100f85c0b98d3f0bb39a93c009476405e7651bb5d8fe2f6c2400c87fe8105165ea10220761553fdb07c250bef771f061ea6cb397b8d29fc446a28da04010afd6757acf0"
+          }
+        },
+        "transactions": [
+          {
+            "version": 1,
+            "chainId": 1337,
+            "type": "transfer",
+            "from": "SFrom1",
+            "to": "STo1",
+            "amount": "1000000000000000000000",
+            "asset": "SBRIT",
+            "sequence": 1,
+            "timestamp": 1760700000001,
+            "salt": "abababababababababababababababab",
+            "fee": {
+              "amount": "0.01",
+              "asset": "SBRIT",
+              "to": "SValidator"
+            },
+            "signature": [
+              {
+                "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+                "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+              }
+            ],
+            "validatorAttestations": []
+          }
+        ]
+      }
+    },
+    "mixed": {
+      "amounts": [
+        "0.00000001",
+        "1000000000000000000000",
+        "0"
+      ],
+      "txids": [
+        "8f63aea692c3ac8faddaf23523710a923753353721ef2ad0bd9b18d7fd96034b",
+        "8c94676d800cbc696b974c79870a959a098e949fb62c8bde3dbab3c2a7c6a06f",
+        "d5839cf0136835294ecb7fc557fef187e3ed2e2aa6da97a63de82dced6230075"
+      ],
+      "totalValue": "1000000000000000000000.00000001",
+      "preimageHex": "390500007be7e5f199010000386636336165613639326333616338666164646166323335323337313061393233373533333533373231656632616430626439623138643766643936303334623863393436373664383030636263363936623937346337393837306139353961303938653934396662363263386264653364626162336332613763366130366664353833396366303133363833353239346563623766633535376665663138376533656432653261613664613937613633646538326463656436323330303735313030303030303030303030303030303030303030302e30303030303030317a6f766f6c74",
+      "preimageHashHex": "d181360f3cada4f5c361e6c9c191d1de46e5cee080247f4394810f25bd24ea7c",
+      "blockHash": "88078028d57f9d2a6a2fb6bf140da3eada260d3d3b98aec2b818ec1253f8e1e5",
+      "signature": "304402204cc30c2f65c0d70b54ca7ce761721fc0dddf6d40ca5a122ea2f5a198189ff46b02205d184d18688a5b8f4c3884dcaeb576406abda5cd1ca59b404978b1919085cd76",
+      "block": {
+        "header": {
+          "chainId": 1337,
+          "version": 1,
+          "txRoot": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+          "timestamp": 1760700000123,
+          "creatorApproval": {
+            "creatorId": "zovolt",
+            "creatorPubKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+            "signature": "304402204cc30c2f65c0d70b54ca7ce761721fc0dddf6d40ca5a122ea2f5a198189ff46b02205d184d18688a5b8f4c3884dcaeb576406abda5cd1ca59b404978b1919085cd76"
+          }
+        },
+        "transactions": [
+          {
+            "version": 1,
+            "chainId": 1337,
+            "type": "transfer",
+            "from": "SFrom1",
+            "to": "STo1",
+            "amount": "0.00000001",
+            "asset": "SBRIT",
+            "sequence": 1,
+            "timestamp": 1760700000001,
+            "salt": "abababababababababababababababab",
+            "fee": {
+              "amount": "0.01",
+              "asset": "SBRIT",
+              "to": "SValidator"
+            },
+            "signature": [
+              {
+                "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+                "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+              }
+            ],
+            "validatorAttestations": []
+          },
+          {
+            "version": 1,
+            "chainId": 1337,
+            "type": "transfer",
+            "from": "SFrom2",
+            "to": "STo2",
+            "amount": "1000000000000000000000",
+            "asset": "SBRIT",
+            "sequence": 2,
+            "timestamp": 1760700000002,
+            "salt": "abababababababababababababababab",
+            "fee": {
+              "amount": "0.01",
+              "asset": "SBRIT",
+              "to": "SValidator"
+            },
+            "signature": [
+              {
+                "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+                "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+              }
+            ],
+            "validatorAttestations": []
+          },
+          {
+            "version": 1,
+            "chainId": 1337,
+            "type": "transfer",
+            "from": "SFrom3",
+            "to": "STo3",
+            "amount": "0",
+            "asset": "SBRIT",
+            "sequence": 3,
+            "timestamp": 1760700000003,
+            "salt": "abababababababababababababababab",
+            "fee": {
+              "amount": "0.01",
+              "asset": "SBRIT",
+              "to": "SValidator"
+            },
+            "signature": [
+              {
+                "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
+                "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+              }
+            ],
+            "validatorAttestations": []
+          }
+        ]
+      }
+    }
+  }
+}

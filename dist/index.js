@@ -26,5 +26,6 @@ __exportStar(require("./address"), exports);
 __exportStar(require("./keys"), exports);
 __exportStar(require("./signing"), exports);
 __exportStar(require("./transaction"), exports);
+__exportStar(require("./block"), exports);
 __exportStar(require("./metadata"), exports);
 __exportStar(require("./walletfile"), exports);

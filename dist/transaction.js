@@ -32,28 +32,26 @@ exports.validateTransactionAddressOwnership = validateTransactionAddressOwnershi
 exports.combineTxWithSigs = combineTxWithSigs;
 exports.validateTransactionSignatures = validateTransactionSignatures;
 exports.txToString = txToString;
-const decimal_js_1 = require("decimal.js");
+const decimal_1 = require("./decimal");
 const streembit_bc_types_1 = require("streembit-bc-types");
 const encoding_1 = require("./encoding");
 const hashing_1 = require("./hashing");
 const address_1 = require("./address");
 const signing_1 = require("./signing");
-/** Decimal arithmetic as the node's decimal service configures it. */
-const Dec = decimal_js_1.Decimal.clone({ precision: 40, rounding: decimal_js_1.Decimal.ROUND_HALF_UP });
 /** Positive decimal amount, optionally within [minAmount, maxAmount]. */
 function validateAmount(amount, options) {
     try {
-        const amt = new Dec(amount);
+        const amt = new decimal_1.Dec(amount);
         if (amt.isNegative() || amt.isZero()) {
             return false;
         }
         if (options?.minAmount) {
-            if (amt.lessThan(new Dec(options.minAmount))) {
+            if (amt.lessThan(new decimal_1.Dec(options.minAmount))) {
                 return false;
             }
         }
         if (options?.maxAmount) {
-            if (amt.greaterThan(new Dec(options.maxAmount))) {
+            if (amt.greaterThan(new decimal_1.Dec(options.maxAmount))) {
                 return false;
             }
         }
@@ -156,7 +154,7 @@ function buildContractCallTx(p) {
     if (p.amount !== undefined && p.amount !== null && p.amount !== '') {
         let callAmount;
         try {
-            callAmount = new Dec(p.amount);
+            callAmount = new decimal_1.Dec(p.amount);
         }
         catch {
             throw new Error('Invalid amount format');

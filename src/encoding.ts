@@ -158,3 +158,23 @@ export function randomBytes(length: number): Uint8Array<ArrayBuffer> {
     globalThis.crypto.getRandomValues(out);
     return out;
 }
+
+/** Unsigned 32-bit integer as 4 little-endian bytes; the chain id in the creator signature preimage. */
+export function encodeU32LE(value: number): Uint8Array<ArrayBuffer> {
+    if (!Number.isInteger(value) || value < 0 || value > 0xFFFFFFFF) {
+        throw new Error('Value must be valid u32 (0 to 4294967295)');
+    }
+    const buf = new Uint8Array(4);
+    new DataView(buf.buffer).setUint32(0, value >>> 0, true);
+    return buf;
+}
+
+/** Unsigned 64-bit integer as 8 little-endian bytes; the timestamp in the creator signature preimage. */
+export function encodeU64LE(value: bigint): Uint8Array<ArrayBuffer> {
+    if (value < BigInt(0) || value > BigInt('0xFFFFFFFFFFFFFFFF')) {
+        throw new Error('Value must be valid u64');
+    }
+    const buf = new Uint8Array(8);
+    new DataView(buf.buffer).setBigUint64(0, value, true);
+    return buf;
+}

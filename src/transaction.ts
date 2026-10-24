@@ -17,7 +17,8 @@
  * The transaction types and the protocol constants come from streembit-bc-types; nothing is redeclared here.
  */
 
-import { Decimal } from 'decimal.js';
+import type { Decimal } from 'decimal.js';
+import { Dec } from './decimal';
 import { TxType, AssetId, SBRIT_FEE_AMOUNT, SSC_FEE_AMOUNT, ContractLocation, MAX_ALLOWED_SIGNATURES } from 'streembit-bc-types';
 import type { Transaction, TransferTransaction, ContractCallTransaction, TransactionSignature } from 'streembit-bc-types';
 import { encodeDeterministicJSON, bytesToHex, concat, utf8ToBytes, hexToBytes, randomBytes } from './encoding';
@@ -26,8 +27,6 @@ import { publicKeyOwnsAddress } from './address';
 import { verify } from './signing';
 import type { Signer } from './signing';
 
-/** Decimal arithmetic as the node's decimal service configures it. */
-const Dec = Decimal.clone({ precision: 40, rounding: Decimal.ROUND_HALF_UP });
 
 export interface TransferParams {
     chainId: number;

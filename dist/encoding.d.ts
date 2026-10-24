@@ -37,4 +37,8 @@ export declare function bytesToBase64(bytes: Uint8Array): string;
 export declare function base64ToBytes(b64: string): Uint8Array<ArrayBuffer>;
 /** Cryptographically secure random bytes from Web Crypto (globalThis.crypto in Node and in browsers). */
 export declare function randomBytes(length: number): Uint8Array<ArrayBuffer>;
+/** Unsigned 32-bit integer as 4 little-endian bytes; the chain id in the creator signature preimage. */
+export declare function encodeU32LE(value: number): Uint8Array<ArrayBuffer>;
+/** Unsigned 64-bit integer as 8 little-endian bytes; the timestamp in the creator signature preimage. */
+export declare function encodeU64LE(value: bigint): Uint8Array<ArrayBuffer>;
 //# sourceMappingURL=encoding.d.ts.map

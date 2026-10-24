@@ -10,6 +10,7 @@ export * from './address';
 export * from './keys';
 export * from './signing';
 export * from './transaction';
+export * from './block';
 export * from './metadata';
 export * from './walletfile';
 //# sourceMappingURL=index.d.ts.map
