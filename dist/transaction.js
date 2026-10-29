@@ -6,8 +6,9 @@
  * wallet obtains from the Accountable Node API (./api). Contract calls also need the contract's codeHash,
  * sandboxHash and location from the API (the node reads them from acct/<cid>/meta).
  *
- * Signing preimage (serializeForSigning): the deterministic JSON of the transaction without signature,
- * validatorAttestations and fee, as hex.
+ * Signing preimage (serializeForSigning): the deterministic JSON of the transaction without signature and
+ * fee, as hex. The fee amount and asset stay on the transaction; the fee recipient is the attester the block
+ * header names, so no transaction carries one.
  * txid: Blake2b-256 over chainId || timestamp || payload || JSON(signature) || salt || sequence.
  *
  * Multisig: getTxSignatures produces the detached signatures of several signers over the same preimage,
@@ -22,7 +23,6 @@ exports.validateAmount = validateAmount;
 exports.generateSalt = generateSalt;
 exports.serializeForSigning = serializeForSigning;
 exports.computeTxId = computeTxId;
-exports.serializeForAttestation = serializeForAttestation;
 exports.pendingTxId = pendingTxId;
 exports.buildTransferTx = buildTransferTx;
 exports.buildContractCallTx = buildContractCallTx;
@@ -65,11 +65,10 @@ function validateAmount(amount, options) {
 function generateSalt(from) {
     return (0, hashing_1.createSalt)(JSON.stringify({ t: Date.now(), r: (0, encoding_1.bytesToHex)((0, encoding_1.randomBytes)(16)), from }));
 }
-/** Hex of the deterministic JSON of the transaction without signature, validatorAttestations and fee. */
+/** Hex of the deterministic JSON of the transaction without signature and fee. */
 function serializeForSigning(tx) {
     const txCopy = { ...tx };
     delete txCopy.signature;
-    delete txCopy.validatorAttestations;
     delete txCopy.fee;
     return (0, encoding_1.encodeDeterministicJSON)(txCopy, { asHex: true });
 }
@@ -95,16 +94,11 @@ function computeTxId(tx) {
     const image = (0, encoding_1.concat)((0, encoding_1.utf8ToBytes)(String(tx.chainId)), (0, encoding_1.utf8ToBytes)(String(tx.timestamp)), (0, encoding_1.utf8ToBytes)(txIdPayload(tx)), (0, encoding_1.utf8ToBytes)(JSON.stringify(tx.signature)), (0, encoding_1.utf8ToBytes)(tx.salt), (0, encoding_1.utf8ToBytes)(String(tx.sequence)));
     return (0, encoding_1.bytesToHex)((0, hashing_1.blake2b256)(image));
 }
-/** Attestation preimage: Blake2b-256(chainId || txid || from || sequence) as hex. */
-function serializeForAttestation(tx, txid) {
-    const preimage = (0, encoding_1.concat)((0, encoding_1.utf8ToBytes)(String(tx.chainId)), (0, encoding_1.hexToBytes)(txid), (0, encoding_1.utf8ToBytes)(tx.from), (0, encoding_1.utf8ToBytes)(String(tx.sequence)));
-    return (0, encoding_1.bytesToHex)((0, hashing_1.blake2b256)(preimage));
-}
 /** Id of a transaction waiting for signatures: Blake2b-256 of the exact bytes the signers sign. */
 function pendingTxId(unsignedTx) {
     return (0, encoding_1.bytesToHex)((0, hashing_1.blake2b256)((0, encoding_1.hexToBytes)(serializeForSigning(unsignedTx))));
 }
-/** Unsigned transfer with the fee placeholder the node expects (fee.to is set by the engine). */
+/** Unsigned transfer with the fixed fee amount in the transfer's asset; the fee goes to the attester named in the block. */
 function buildTransferTx(p) {
     if (p.asset !== streembit_bc_types_1.AssetId.SBRIT && p.asset !== streembit_bc_types_1.AssetId.SSC) {
         throw new Error('Invalid or missing asset');
@@ -132,9 +126,8 @@ function buildTransferTx(p) {
         sequence: p.sequence,
         timestamp: p.timestamp ?? Date.now(),
         salt: p.salt ?? generateSalt(p.from),
-        fee: { amount: p.asset === streembit_bc_types_1.AssetId.SBRIT ? streembit_bc_types_1.SBRIT_FEE_AMOUNT : streembit_bc_types_1.SSC_FEE_AMOUNT, asset: p.asset, to: '' },
-        signature: [],
-        validatorAttestations: []
+        fee: { amount: p.asset === streembit_bc_types_1.AssetId.SBRIT ? streembit_bc_types_1.SBRIT_FEE_AMOUNT : streembit_bc_types_1.SSC_FEE_AMOUNT, asset: p.asset },
+        signature: []
     };
 }
 /** Unsigned contract call, as the node's ContractCallTxCreator assembles it. */
@@ -180,9 +173,8 @@ function buildContractCallTx(p) {
         sequence: p.sequence,
         timestamp: p.timestamp ?? Date.now(),
         salt: p.salt ?? generateSalt(p.from),
-        fee: { amount: streembit_bc_types_1.SBRIT_FEE_AMOUNT, asset: streembit_bc_types_1.AssetId.SBRIT, to: '' },
+        fee: { amount: streembit_bc_types_1.SBRIT_FEE_AMOUNT, asset: streembit_bc_types_1.AssetId.SBRIT },
         signature: [],
-        validatorAttestations: [],
         data: p.data === undefined ? '' : (0, encoding_1.encodeDeterministicJSON)(p.data, { asHex: true }),
         method: p.method,
         codeHash: p.codeHash,
@@ -261,7 +253,7 @@ function combineTxWithSigs(tx, signatures) {
             throw new Error('Invalid signature: missing or invalid signature');
         }
     }
-    return { ...tx, signature: signatures, validatorAttestations: [] };
+    return { ...tx, signature: signatures };
 }
 /** The node's signature rules: non-empty, at most MAX_ALLOWED_SIGNATURES, unique public keys, every signature verifies over the preimage. */
 function validateTransactionSignatures(tx) {

@@ -84,7 +84,7 @@ sequence of a transaction being built are read with `fetchStatus('node')` and `f
 | `address` | user and contract addresses, validation, `publicKeyOwnsAddress` |
 | `keys` | BIP39 mnemonic, BIP32 derivation on `m/44'/19640701'/<account>'/0/<index>` |
 | `signing` | ECDSA secp256k1 over SHA-256, DER, `Signer` and `SoftwareSigner` |
-| `transaction` | transfer and contract call builders, `serializeForSigning`, `computeTxId`, `serializeForAttestation`, `validateAmount`; multisig: `getTxSignatures`, `signTransaction`, `combineTxWithSigs`, `validateTransactionSignatures`, `validateTransactionAddressOwnership`, `pendingTxId` |
+| `transaction` | transfer and contract call builders, `serializeForSigning`, `computeTxId`, `validateAmount`; multisig: `getTxSignatures`, `signTransaction`, `combineTxWithSigs`, `validateTransactionSignatures`, `validateTransactionAddressOwnership`, `pendingTxId` |
 | `metadata` | the wallet file's record of handed-out addresses and labels |
 | `walletfile` | wallet.json version 1: scrypt key derivation, AES-256-GCM, password policy; two sealed payloads, `{mnemonic}` (`createWalletFile`, `openWalletFile`) and `{privateKey}` for an officer's recorded key (`createKeyFile`, `openKeyFile`); `metadata.kind` says which |
 | `api` | the Accountable Node API client (separate entry point) |

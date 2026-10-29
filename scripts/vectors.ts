@@ -138,9 +138,8 @@ async function main(): Promise<void> {
         sequence: 1,
         timestamp: 1760000000000,
         salt: createSalt('wallet-vectors transfer'),
-        fee: { amount: SBRIT_FEE_AMOUNT, asset: AssetId.SBRIT, to: '' },
-        signature: [],
-        validatorAttestations: []
+        fee: { amount: SBRIT_FEE_AMOUNT, asset: AssetId.SBRIT },
+        signature: []
     } as unknown as Transaction, sender.privateKey, sender.publicKey);
 
     const contractCall = cosigned(signedTransaction({
@@ -154,9 +153,8 @@ async function main(): Promise<void> {
         sequence: 2,
         timestamp: 1760000001000,
         salt: createSalt('wallet-vectors contract call'),
-        fee: { amount: SBRIT_FEE_AMOUNT, asset: AssetId.SBRIT, to: '' },
+        fee: { amount: SBRIT_FEE_AMOUNT, asset: AssetId.SBRIT },
         signature: [],
-        validatorAttestations: [],
         data: encodeDeterministicJSON({ validatorId: 'v1' }, { asHex: true }),
         method: 'register',
         codeHash: 'ab'.repeat(32),

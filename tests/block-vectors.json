@@ -13,20 +13,38 @@
         "33ee72bf15b3a7c496e376477b723c01508a7187777f4c65fce1c397c896484a"
       ],
       "totalValue": "5.01",
-      "preimageHex": "390500007be7e5f1990100003537643832663264343438353530306533386365663765393537633337393939396130626430373932343462663632313065306637326661316137636534316233336565373262663135623361376334393665333736343737623732336330313530386137313837373737663463363566636531633339376338393634383461352e30317a6f766f6c74",
-      "preimageHashHex": "7a11248ca9e1eb01583a830835327b6a75ff7711e5a500f64c168937265a681a",
-      "blockHash": "88078028d57f9d2a6a2fb6bf140da3eada260d3d3b98aec2b818ec1253f8e1e5",
-      "signature": "3045022100d8a765d9b3aed01b42f5c58155ecbbe100ef55ba00261068162da528d80b41dc02207d494ebb835ccb1b7b0ed4dd36bf4d864a10af1faa2416b2b9d41841c0c8b391",
+      "preimageHex": "390500007be7e5f1990100003537643832663264343438353530306533386365663765393537633337393939396130626430373932343462663632313065306637326661316137636534316233336565373262663135623361376334393665333736343737623732336330313530386137313837373737663463363566636531633339376338393634383461352e30317a6f766f6c7419397d18ebe97421d91d1c652a9a5f8cf648a46bbdfd6f5bd62e96b01d0d8aac49fc8aff48e8995d002638995102ab3460a5b2e0ca1ee272b2cc210c8bdb05c1",
+      "preimageHashHex": "72978c80447d38453bcaec1aaff3f2e091ce8e4fa022ae6d68fc47fc97625a9a",
+      "blockHash": "cc14617ef9a921482a099a16cb737ee1ad6c070537a90fdea63a020a125ee689",
+      "signature": "304402204c3bb0710dfab8b3a0a86cb1ceba9fb89d86edc0450344953ff87f848346d30c022070e926d8d8b2685a16473784a6031f12641b5ecfb1d034f75d03e91918f1401a",
       "block": {
         "header": {
           "chainId": 1337,
           "version": 1,
           "txRoot": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
           "timestamp": 1760700000123,
+          "parentHash": "19397d18ebe97421d91d1c652a9a5f8cf648a46bbdfd6f5bd62e96b01d0d8aac",
+          "attestation": {
+            "setNumber": 1,
+            "parentHash": "19397d18ebe97421d91d1c652a9a5f8cf648a46bbdfd6f5bd62e96b01d0d8aac",
+            "validatorId": "validator1",
+            "attestorPubKey": "02cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+            "verdicts": [
+              {
+                "txid": "57d82f2d4485500e38cef7e957c379999a0bd079244bf6210e0f72fa1a7ce41b",
+                "valid": true
+              },
+              {
+                "txid": "33ee72bf15b3a7c496e376477b723c01508a7187777f4c65fce1c397c896484a",
+                "valid": true
+              }
+            ],
+            "signature": "0d8ff22418651f456391b5c4c5640b9dca33d6175645b427d38c508373391b0e00"
+          },
           "creatorApproval": {
             "creatorId": "zovolt",
             "creatorPubKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
-            "signature": "3045022100d8a765d9b3aed01b42f5c58155ecbbe100ef55ba00261068162da528d80b41dc02207d494ebb835ccb1b7b0ed4dd36bf4d864a10af1faa2416b2b9d41841c0c8b391"
+            "signature": "304402204c3bb0710dfab8b3a0a86cb1ceba9fb89d86edc0450344953ff87f848346d30c022070e926d8d8b2685a16473784a6031f12641b5ecfb1d034f75d03e91918f1401a"
           }
         },
         "transactions": [
@@ -43,16 +61,14 @@
             "salt": "abababababababababababababababab",
             "fee": {
               "amount": "0.01",
-              "asset": "SBRIT",
-              "to": "SValidator"
+              "asset": "SBRIT"
             },
             "signature": [
               {
                 "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
                 "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
               }
-            ],
-            "validatorAttestations": []
+            ]
           },
           {
             "version": 1,
@@ -67,16 +83,14 @@
             "salt": "abababababababababababababababab",
             "fee": {
               "amount": "0.01",
-              "asset": "SBRIT",
-              "to": "SValidator"
+              "asset": "SBRIT"
             },
             "signature": [
               {
                 "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
                 "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
               }
-            ],
-            "validatorAttestations": []
+            ]
           }
         ]
       }
@@ -89,20 +103,34 @@
         "bb2c31af80e8c220111e87345383d99d3fe76d8242533376e1fdc0d3e30f972b"
       ],
       "totalValue": "0",
-      "preimageHex": "390500007be7e5f19901000062623263333161663830653863323230313131653837333435333833643939643366653736643832343235333333373665316664633064336533306639373262307a6f766f6c74",
-      "preimageHashHex": "bee4f3c0a921d4c859695e36f3e0da772199e211f67b97a1c2810924410838f0",
-      "blockHash": "88078028d57f9d2a6a2fb6bf140da3eada260d3d3b98aec2b818ec1253f8e1e5",
-      "signature": "3045022100b9a297d46c84ead00ebaf5be22fb67cc5e4c885a872a0e70bbac4a9dbbc9d1e902206ecc992645af484d29b179920df2eb9fe2bae2349acb5fd680ba4944186563a9",
+      "preimageHex": "390500007be7e5f19901000062623263333161663830653863323230313131653837333435333833643939643366653736643832343235333333373665316664633064336533306639373262307a6f766f6c746036a4079b5feb3cc8b79234c3b271a7b583ede055c65d03f84141c03e661680cf2a8c1a2ae9e6ee0be9cbe28e5e18dcef3b0ff71e6decea11829193af05ca4c",
+      "preimageHashHex": "087eb7773f4891dca5c35843fcd5f50acd427751fc15842638ad0d0c3ede6119",
+      "blockHash": "fb467fd5120c3e5a63f329bc9fcf341c1b6e293f28f81f2c9ee6e58adacdb6c9",
+      "signature": "3045022100f5973c37a3bf36ae9089abc73b5ca8e77419b173f7ce1c55880d0bbd5447f69202203d81aaf222d36f04e4151da2546fd5f80921c15baf95fb446c0bd018d7d8565a",
       "block": {
         "header": {
           "chainId": 1337,
           "version": 1,
           "txRoot": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
           "timestamp": 1760700000123,
+          "parentHash": "6036a4079b5feb3cc8b79234c3b271a7b583ede055c65d03f84141c03e661680",
+          "attestation": {
+            "setNumber": 2,
+            "parentHash": "6036a4079b5feb3cc8b79234c3b271a7b583ede055c65d03f84141c03e661680",
+            "validatorId": "validator1",
+            "attestorPubKey": "02cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+            "verdicts": [
+              {
+                "txid": "bb2c31af80e8c220111e87345383d99d3fe76d8242533376e1fdc0d3e30f972b",
+                "valid": true
+              }
+            ],
+            "signature": "09e941b09e6f78927ce8854a2804b6ac00af33edf591302c45d50e57fbdf5ec000"
+          },
           "creatorApproval": {
             "creatorId": "zovolt",
             "creatorPubKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
-            "signature": "3045022100b9a297d46c84ead00ebaf5be22fb67cc5e4c885a872a0e70bbac4a9dbbc9d1e902206ecc992645af484d29b179920df2eb9fe2bae2349acb5fd680ba4944186563a9"
+            "signature": "3045022100f5973c37a3bf36ae9089abc73b5ca8e77419b173f7ce1c55880d0bbd5447f69202203d81aaf222d36f04e4151da2546fd5f80921c15baf95fb446c0bd018d7d8565a"
           }
         },
         "transactions": [
@@ -119,16 +147,14 @@
             "salt": "abababababababababababababababab",
             "fee": {
               "amount": "0.01",
-              "asset": "SBRIT",
-              "to": "SValidator"
+              "asset": "SBRIT"
             },
             "signature": [
               {
                 "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
                 "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
               }
-            ],
-            "validatorAttestations": []
+            ]
           }
         ]
       }
@@ -141,20 +167,34 @@
         "8f63aea692c3ac8faddaf23523710a923753353721ef2ad0bd9b18d7fd96034b"
       ],
       "totalValue": "0.00000001",
-      "preimageHex": "390500007be7e5f19901000038663633616561363932633361633866616464616632333532333731306139323337353333353337323165663261643062643962313864376664393630333462302e30303030303030317a6f766f6c74",
-      "preimageHashHex": "eab0e42d74ca104500359b39ce6b236b90ad6ebcd175ab3e8d421c5220f7b957",
-      "blockHash": "88078028d57f9d2a6a2fb6bf140da3eada260d3d3b98aec2b818ec1253f8e1e5",
-      "signature": "30440220766342a56e8345d4c5a00cdeca0ed66ad900e44eaf6a12ae7b5ee0961db27ecf022005778cd089358919cb85769af3a932a31920d8bb528e444d1c6ed0de85ddc977",
+      "preimageHex": "390500007be7e5f19901000038663633616561363932633361633866616464616632333532333731306139323337353333353337323165663261643062643962313864376664393630333462302e30303030303030317a6f766f6c74bfc764c3d05fe4db25c690cd80da5c8655219afb7ba16d0865bc15eaf54ea87ff6ff5ed7d5b4830e7621359668c5ec52b65c1896c1f34ef8d0a9e8407bf1af15",
+      "preimageHashHex": "69f6e33e60aa58a14a60ff61ca62cec783f604e49e0c6f78dbe35622a55de516",
+      "blockHash": "55db1bfdf61c36de5ce2d60d66ee56527a009040f6c81f4812034cc89dcf48f2",
+      "signature": "304402200bde5dce12a50a71db8a69d74e913a6c51fdbf654cdddf0b6597b6096cbab23102207921ee817bb89dc196ef221dbda53536c18f72a6ea6d40559a6434f0a98dba97",
       "block": {
         "header": {
           "chainId": 1337,
           "version": 1,
           "txRoot": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
           "timestamp": 1760700000123,
+          "parentHash": "bfc764c3d05fe4db25c690cd80da5c8655219afb7ba16d0865bc15eaf54ea87f",
+          "attestation": {
+            "setNumber": 3,
+            "parentHash": "bfc764c3d05fe4db25c690cd80da5c8655219afb7ba16d0865bc15eaf54ea87f",
+            "validatorId": "validator1",
+            "attestorPubKey": "02cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+            "verdicts": [
+              {
+                "txid": "8f63aea692c3ac8faddaf23523710a923753353721ef2ad0bd9b18d7fd96034b",
+                "valid": true
+              }
+            ],
+            "signature": "1b279e6e72a57011f5e94596b112e856e999d0248ac8e063c35e74c80622d09700"
+          },
           "creatorApproval": {
             "creatorId": "zovolt",
             "creatorPubKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
-            "signature": "30440220766342a56e8345d4c5a00cdeca0ed66ad900e44eaf6a12ae7b5ee0961db27ecf022005778cd089358919cb85769af3a932a31920d8bb528e444d1c6ed0de85ddc977"
+            "signature": "304402200bde5dce12a50a71db8a69d74e913a6c51fdbf654cdddf0b6597b6096cbab23102207921ee817bb89dc196ef221dbda53536c18f72a6ea6d40559a6434f0a98dba97"
           }
         },
         "transactions": [
@@ -171,16 +211,14 @@
             "salt": "abababababababababababababababab",
             "fee": {
               "amount": "0.01",
-              "asset": "SBRIT",
-              "to": "SValidator"
+              "asset": "SBRIT"
             },
             "signature": [
               {
                 "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
                 "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
               }
-            ],
-            "validatorAttestations": []
+            ]
           }
         ]
       }
@@ -193,20 +231,34 @@
         "c76b3a91f95c702b108c388cff578ab88ce20bc003537b9568ebdee662ce837b"
       ],
       "totalValue": "1000000000000000000000",
-      "preimageHex": "390500007be7e5f19901000063373662336139316639356337303262313038633338386366663537386162383863653230626330303335333762393536386562646565363632636538333762313030303030303030303030303030303030303030307a6f766f6c74",
-      "preimageHashHex": "fcb805605f4ff08a8f47008c0fdb863be23d8dcb5dea0e6e899870db234ecf2b",
-      "blockHash": "88078028d57f9d2a6a2fb6bf140da3eada260d3d3b98aec2b818ec1253f8e1e5",
-      "signature": "3045022100f85c0b98d3f0bb39a93c009476405e7651bb5d8fe2f6c2400c87fe8105165ea10220761553fdb07c250bef771f061ea6cb397b8d29fc446a28da04010afd6757acf0",
+      "preimageHex": "390500007be7e5f19901000063373662336139316639356337303262313038633338386366663537386162383863653230626330303335333762393536386562646565363632636538333762313030303030303030303030303030303030303030307a6f766f6c745b96a770cb8ddb957b600db49d42bf8f5f0385f7129e8ae87b7b7893e348674a2cc5f18946c194949bab4014088bdcd29f0485837e62e7654e525a11a2a07b24",
+      "preimageHashHex": "e1256a44ddf7ab4b8bf1de750f5965e277db529d029020e3f9f0ffdadf1ab207",
+      "blockHash": "e496b831b41b3312af81faabe5d45c410e17ab5f01ed226e9d95ebad1d917f4d",
+      "signature": "3044022021103dd836f39a38c7cd70fab762f331252f1fdc8858264239f429d174274390022065d9419b7393faa2f906845f842f36d3c35699e7439b1bea79efe18ddcbd7616",
       "block": {
         "header": {
           "chainId": 1337,
           "version": 1,
           "txRoot": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
           "timestamp": 1760700000123,
+          "parentHash": "5b96a770cb8ddb957b600db49d42bf8f5f0385f7129e8ae87b7b7893e348674a",
+          "attestation": {
+            "setNumber": 4,
+            "parentHash": "5b96a770cb8ddb957b600db49d42bf8f5f0385f7129e8ae87b7b7893e348674a",
+            "validatorId": "validator1",
+            "attestorPubKey": "02cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+            "verdicts": [
+              {
+                "txid": "c76b3a91f95c702b108c388cff578ab88ce20bc003537b9568ebdee662ce837b",
+                "valid": true
+              }
+            ],
+            "signature": "8ee8cf31196e7ec20d06b29d69fc23ee645c5d396eb4fce3b7885025eeaa5cee00"
+          },
           "creatorApproval": {
             "creatorId": "zovolt",
             "creatorPubKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
-            "signature": "3045022100f85c0b98d3f0bb39a93c009476405e7651bb5d8fe2f6c2400c87fe8105165ea10220761553fdb07c250bef771f061ea6cb397b8d29fc446a28da04010afd6757acf0"
+            "signature": "3044022021103dd836f39a38c7cd70fab762f331252f1fdc8858264239f429d174274390022065d9419b7393faa2f906845f842f36d3c35699e7439b1bea79efe18ddcbd7616"
           }
         },
         "transactions": [
@@ -223,16 +275,14 @@
             "salt": "abababababababababababababababab",
             "fee": {
               "amount": "0.01",
-              "asset": "SBRIT",
-              "to": "SValidator"
+              "asset": "SBRIT"
             },
             "signature": [
               {
                 "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
                 "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
               }
-            ],
-            "validatorAttestations": []
+            ]
           }
         ]
       }
@@ -249,20 +299,42 @@
         "d5839cf0136835294ecb7fc557fef187e3ed2e2aa6da97a63de82dced6230075"
       ],
       "totalValue": "1000000000000000000000.00000001",
-      "preimageHex": "390500007be7e5f199010000386636336165613639326333616338666164646166323335323337313061393233373533333533373231656632616430626439623138643766643936303334623863393436373664383030636263363936623937346337393837306139353961303938653934396662363263386264653364626162336332613763366130366664353833396366303133363833353239346563623766633535376665663138376533656432653261613664613937613633646538326463656436323330303735313030303030303030303030303030303030303030302e30303030303030317a6f766f6c74",
-      "preimageHashHex": "d181360f3cada4f5c361e6c9c191d1de46e5cee080247f4394810f25bd24ea7c",
-      "blockHash": "88078028d57f9d2a6a2fb6bf140da3eada260d3d3b98aec2b818ec1253f8e1e5",
-      "signature": "304402204cc30c2f65c0d70b54ca7ce761721fc0dddf6d40ca5a122ea2f5a198189ff46b02205d184d18688a5b8f4c3884dcaeb576406abda5cd1ca59b404978b1919085cd76",
+      "preimageHex": "390500007be7e5f199010000386636336165613639326333616338666164646166323335323337313061393233373533333533373231656632616430626439623138643766643936303334623863393436373664383030636263363936623937346337393837306139353961303938653934396662363263386264653364626162336332613763366130366664353833396366303133363833353239346563623766633535376665663138376533656432653261613664613937613633646538326463656436323330303735313030303030303030303030303030303030303030302e30303030303030317a6f766f6c747196cb1632450f69c8c643c79431b013784b858ce882b64cd933ee3bc3aeac4d517b76c85d0b349eb4c7030b2c60d839dd307ef5a09fe7dbaf3fa84b460f1f30",
+      "preimageHashHex": "2eb1a9129947f71d268ca69693fb900a3db105c9c6cd39f9b7d9894cad1e9d02",
+      "blockHash": "d2efb5f7ae82423bcb752f4625dab19b2ed0976b744895b569f7efbbdfd7f568",
+      "signature": "3045022100fa6800effa42dd72b81c67355f0dc5efa9169b74c55ab77dc254eddd0ae99d940220158685d8c2bbdfaccfc7b7c9d77695ffb6853ab2abc05daa291eb8ddf55cabbd",
       "block": {
         "header": {
           "chainId": 1337,
           "version": 1,
           "txRoot": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
           "timestamp": 1760700000123,
+          "parentHash": "7196cb1632450f69c8c643c79431b013784b858ce882b64cd933ee3bc3aeac4d",
+          "attestation": {
+            "setNumber": 5,
+            "parentHash": "7196cb1632450f69c8c643c79431b013784b858ce882b64cd933ee3bc3aeac4d",
+            "validatorId": "validator1",
+            "attestorPubKey": "02cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+            "verdicts": [
+              {
+                "txid": "8f63aea692c3ac8faddaf23523710a923753353721ef2ad0bd9b18d7fd96034b",
+                "valid": true
+              },
+              {
+                "txid": "8c94676d800cbc696b974c79870a959a098e949fb62c8bde3dbab3c2a7c6a06f",
+                "valid": true
+              },
+              {
+                "txid": "d5839cf0136835294ecb7fc557fef187e3ed2e2aa6da97a63de82dced6230075",
+                "valid": true
+              }
+            ],
+            "signature": "04eb99a423f0988d6f63d8a48afd7c095cbf0bf817460540d071ad0ceb7076de00"
+          },
           "creatorApproval": {
             "creatorId": "zovolt",
             "creatorPubKey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
-            "signature": "304402204cc30c2f65c0d70b54ca7ce761721fc0dddf6d40ca5a122ea2f5a198189ff46b02205d184d18688a5b8f4c3884dcaeb576406abda5cd1ca59b404978b1919085cd76"
+            "signature": "3045022100fa6800effa42dd72b81c67355f0dc5efa9169b74c55ab77dc254eddd0ae99d940220158685d8c2bbdfaccfc7b7c9d77695ffb6853ab2abc05daa291eb8ddf55cabbd"
           }
         },
         "transactions": [
@@ -279,16 +351,14 @@
             "salt": "abababababababababababababababab",
             "fee": {
               "amount": "0.01",
-              "asset": "SBRIT",
-              "to": "SValidator"
+              "asset": "SBRIT"
             },
             "signature": [
               {
                 "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
                 "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
               }
-            ],
-            "validatorAttestations": []
+            ]
           },
           {
             "version": 1,
@@ -303,16 +373,14 @@
             "salt": "abababababababababababababababab",
             "fee": {
               "amount": "0.01",
-              "asset": "SBRIT",
-              "to": "SValidator"
+              "asset": "SBRIT"
             },
             "signature": [
               {
                 "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
                 "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
               }
-            ],
-            "validatorAttestations": []
+            ]
           },
           {
             "version": 1,
@@ -327,19 +395,18 @@
             "salt": "abababababababababababababababab",
             "fee": {
               "amount": "0.01",
-              "asset": "SBRIT",
-              "to": "SValidator"
+              "asset": "SBRIT"
             },
             "signature": [
               {
                 "publickey": "03f2dafe376020f5c6d5a6a2429eb0b646e587e7296a8a308e1db9ddfe568a2f8e",
                 "signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
               }
-            ],
-            "validatorAttestations": []
+            ]
           }
         ]
       }
     }
-  }
+  },
+  "note": "Regenerated with the SDK for the header with parentHash and the set attestation; the attestation signature is a placeholder, opaque to the SDK."
 }

@@ -2,7 +2,7 @@
   "generatedBy": {
     "repository": "streembit-bc-sdk",
     "version": "1.0.0",
-    "generatedAt": "2026-10-17T10:01:45.890Z"
+    "generatedAt": "2026-10-28T17:38:20.487Z"
   },
   "chainId": 1337,
   "version": 1,
@@ -65,7 +65,7 @@
     "dataHex": "7b2261223a317d",
     "privateKey": "db2bab361a2d3a3d77a3ab32c0e617e27584d46d04e2e7010c4254a66b082dad",
     "publicKey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
-    "signature": "304502203ae9b84967e0fd0dafd0cb5b381b5aa2b8c832847761d3cdd174f6a01417ddab022100951f54a87c750f7e6ab2dbfa5371c0718ffa1ce1d97c1758f73333c45049f2fd"
+    "signature": "3046022100d6bdcc2c807082c11fed3fe8245d68dea02ebab8006d27f96d60a86e8500febf022100da2f1dde980a3cfd97d972ef95076f5eaf30e39155906fd579f0f98e7fc85529"
   },
   "transfer": {
     "tx": {
@@ -81,19 +81,17 @@
       "salt": "ac7e91db3fe04ba1478c3163160e4f13",
       "fee": {
         "amount": "0.01",
-        "asset": "SBRIT",
-        "to": ""
+        "asset": "SBRIT"
       },
       "signature": [
         {
           "publickey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
-          "signature": "3045022100c95f849e444b491d71c6bb08da61afac652c211b7ccd87f867e9a7173fb6baba0220190bce4c35ef18ce33f2e97e0a3a6e523131263e84ab70e69a2f914535a2b80f"
+          "signature": "304402206352c829a9b68a362c38f627eecda6a1eac5f18a446f192ba11cc705aa5a2d4d02204dcac3165ad98a76d397de0c0b930ff68ec891ce8c8b7fc89596b0e1eee4d858"
         }
-      ],
-      "validatorAttestations": []
+      ]
     },
     "preimageHex": "7b22616d6f756e74223a2231322e35222c226173736574223a225342524954222c22636861696e4964223a313333372c2266726f6d223a22534d774233597974767431316e37396a5443427766436f6d593843734273786a6433222c2273616c74223a226163376539316462336665303462613134373863333136333136306534663133222c2273657175656e6365223a312c2274696d657374616d70223a313736303030303030303030302c22746f223a225369784866515a4c614a48724d66635851546f364c384e4e42434e54357a5265434a222c2274797065223a227472616e73666572222c2276657273696f6e223a317d",
-    "txid": "0bab5fbe6c6480ad899d95fe2b61896f0b7a436e64451a040e9104b05b8f49e1"
+    "txid": "3b825db7f49c0230b0d96395727180612d5461e26d0c86815571edf7bb46b63e"
   },
   "contractCall": {
     "tx": {
@@ -109,16 +107,14 @@
       "salt": "07a92c1b03462cd4aced62b74d57f629",
       "fee": {
         "amount": "0.01",
-        "asset": "SBRIT",
-        "to": ""
+        "asset": "SBRIT"
       },
       "signature": [
         {
           "publickey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
-          "signature": "3046022100c1fbdcb0a6a68c93bdfee9dc4551adbac03d69a6f7d0efb8c2c5c3b2bebee344022100a00793b182ac19a2890bddba50162c6dd6ec5fd73915066c3d11b448f8b31c7a"
+          "signature": "3046022100c79d4df3e190b66f4deabdc0d633fdf905173db1c085ff7c59f9cfcd2f7f85b1022100d572aeca8feaf02a2754e84d5006e664bedf2704cb8e7552bc1ede5d06ec6043"
         }
       ],
-      "validatorAttestations": [],
       "data": "7b2276616c696461746f724964223a227631227d",
       "method": "register",
       "codeHash": "abababababababababababababababababababababababababababababababab",
@@ -127,10 +123,10 @@
       "location": "file_system"
     },
     "preimageHex": "7b22616d6f756e74223a2230222c226173736574223a225342524954222c22636861696e4964223a313333372c22636964223a2243506e7376556d5a36696d734b4d3151596935426269336347325555593544676d32222c22636f646548617368223a2261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162222c2264617461223a2237623232373636313663363936343631373436663732343936343232336132323736333132323764222c2266726f6d223a22534d774233597974767431316e37396a5443427766436f6d593843734273786a6433222c226c6f636174696f6e223a2266696c655f73797374656d222c226d6574686f64223a227265676973746572222c2273616c74223a223037613932633162303334363263643461636564363262373464353766363239222c2273616e64626f7848617368223a2263646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364222c2273657175656e6365223a322c2274696d657374616d70223a313736303030303030313030302c22746f223a2243506e7376556d5a36696d734b4d3151596935426269336347325555593544676d32222c2274797065223a22636f6e74726163745f63616c6c222c2276657273696f6e223a317d",
-    "txid": "ee9e15b6d32eb7f01754cfccda1336e24b6d56d3be61fbb246d4c04969d7478f",
+    "txid": "38a92f857d1d1565b30ade3eb7bbd056b4790d03c045cc4152f8b6ffe8097871",
     "cosignature": {
       "publickey": "0384cdfcb334a91b824fcae61ee479f49e643e6bdc6e0582c92669f339e312caec",
-      "signature": "304402201283bf99fe46f75db46fd8a14ec60c013373efc823de6f7741c1d2a3ec8d3f6c0220392394763f4d0a7cd384781e310153be077f543fbe7a808ef0498cd131d94cb7"
+      "signature": "30450220733106838f3e130410950c236b16b1d4a1a1bf36e9a8c4c138def85ae491d275022100dcffbf5fe527a93f138d431b8ad1ce196cf571461392c1bef3978506ee95d0ea"
     },
     "pendingTxId": "0ec448050150c2eece9919785bb21d4bc560cc131fc1b781a3ece04f9770fbb6"
   },
@@ -138,10 +134,10 @@
     "password": "Wallet-Vectors#2026",
     "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
     "payload": {
-      "encrypted": "w0yGwlQDlR0b5YuZXbPf12I6wP2CA7iN9h80qkMW9aSKNwYZ/3zKyvTHWvLbUbIYiMH8fe6C7AOIbVlsrmKJAsNV7rYSs3hcW4WtJM1YPATmKPaSiT75Nz45er4Oni0ME7508x4XUzfsILpf",
-      "salt": "jZPbCxQUtbUmQUR9V6GWY2sEF7WpswyBNQCGzHuNZtA=",
-      "iv": "b8tYiWDL5r38ibgH3JWhzg==",
-      "authTag": "OPyUnD3AysW1tn2v5LeJIQ==",
+      "encrypted": "ExNazm9/7pH0LB+up4zoQWXYNMpQC3HJXZEmWJRflu+kVaLsgkW0daex4W2kxDnL7BWiQVqtkOMNeDSUsbszflke0DD59jkGapOd3iGmh/uppBfrtB5ia2frpMe4p7A+/09xIfUUch+8Ndk3",
+      "salt": "x9nm3nn9j6BVbsWqNowVvFaXXcB9tppgjVhT3I1ZyIg=",
+      "iv": "svl1nlx94RcWbLXs+Irk+A==",
+      "authTag": "is/HzqPxOTNi8kGsSq4r4A==",
       "kdf": "scrypt",
       "kdfParams": {
         "N": 131072,
@@ -151,10 +147,10 @@
       }
     },
     "keyPayload": {
-      "encrypted": "UeJkyZOsK/pxwvqyVt2gH08icFWm2nPOfV2HoxkJeMe5VR0P220uXc1G0RSwljyqnQc0zKSlWRLPQykG4t2xhbrnXjGR27QkKL2D86r7Zi3q",
-      "salt": "VQW4/O2YcqHEDwM7wih6Nx4iDfQd8C8WwTltjvofXG4=",
-      "iv": "7Juz3heqStkGYxYtKkgnLg==",
-      "authTag": "FpeswGAj9wIKlAtVGgSOoA==",
+      "encrypted": "1BoDvE4x378pAF5YfrdzGjkR9oCXpiAcA/VBmFziK+72EUg4BDlmIDeYn7HUrZWcGmtBXHcpS/dX8oPiQghpIbrlgjbJltDoHhrfmJQd6uti",
+      "salt": "yiAU3O3jGMIvAl+7XU7aWifHgnEEX5GFjoN0fQDh9jI=",
+      "iv": "dv0bO5U7bwZolfFGkHmeuA==",
+      "authTag": "1SdVMmRA+1/Sr9FXUS8+fQ==",
       "kdf": "scrypt",
       "kdfParams": {
         "N": 131072,

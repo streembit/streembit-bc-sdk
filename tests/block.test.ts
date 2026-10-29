@@ -26,7 +26,8 @@ describe('block hash and creator signature', () => {
     for (const [name, v] of Object.entries(cases)) {
         it(`${name}: total value, preimage, hash and the node's signature match`, () => {
             assert.equal(getTotalValue(v.block), v.totalValue);
-            const preimage = createCreatorSignaturePreimage(v.block.header.chainId, v.block.header.timestamp, v.block.transactions, vectors.creatorId);
+            const h = v.block.header;
+            const preimage = createCreatorSignaturePreimage(h.chainId, h.timestamp, v.block.transactions, vectors.creatorId, h.parentHash, h.attestation);
             assert.equal(bytesToHex(preimage), v.preimageHex);
             assert.equal(bytesToHex(blake2b256(preimage)), v.preimageHashHex);
             assert.equal(computeBlockHash(v.block), v.blockHash);
@@ -50,6 +51,18 @@ describe('block hash and creator signature', () => {
         const otherKey = { ...signed, header: { ...signed.header, creatorApproval: { ...signed.header.creatorApproval, creatorPubKey: '02' + 'ab'.repeat(32) } } };
         assert.equal(verifyCreatorSignature(otherKey), false);
         assert.equal(verifyCreatorSignature(unsigned), false);
+
+        // parentHash and the set attestation are under both the hash and the creator signature
+        const otherParent = { ...signed, header: { ...signed.header, parentHash: 'ab'.repeat(32) } };
+        assert.notEqual(computeBlockHash(otherParent), computeBlockHash(signed));
+        assert.equal(verifyCreatorSignature(otherParent), false);
+        const flipped = { ...signed.header.attestation, verdicts: signed.header.attestation.verdicts.map((d, i) => (i === 0 ? { ...d, valid: !d.valid } : d)) };
+        const otherVerdict = { ...signed, header: { ...signed.header, attestation: flipped } };
+        assert.notEqual(computeBlockHash(otherVerdict), computeBlockHash(signed));
+        assert.equal(verifyCreatorSignature(otherVerdict), false);
+        const otherAttester = { ...signed, header: { ...signed.header, attestation: { ...signed.header.attestation, signature: 'ff' + signed.header.attestation.signature.slice(2) } } };
+        assert.notEqual(computeBlockHash(otherAttester), computeBlockHash(signed));
+        assert.equal(verifyCreatorSignature(otherAttester), false);
     });
 
     it('encodes little-endian integers as the node does', () => {

@@ -5,8 +5,9 @@
  * wallet obtains from the Accountable Node API (./api). Contract calls also need the contract's codeHash,
  * sandboxHash and location from the API (the node reads them from acct/<cid>/meta).
  *
- * Signing preimage (serializeForSigning): the deterministic JSON of the transaction without signature,
- * validatorAttestations and fee, as hex.
+ * Signing preimage (serializeForSigning): the deterministic JSON of the transaction without signature and
+ * fee, as hex. The fee amount and asset stay on the transaction; the fee recipient is the attester the block
+ * header names, so no transaction carries one.
  * txid: Blake2b-256 over chainId || timestamp || payload || JSON(signature) || salt || sequence.
  *
  * Multisig: getTxSignatures produces the detached signatures of several signers over the same preimage,
@@ -103,11 +104,10 @@ export function generateSalt(from: string): string {
     return createSalt(JSON.stringify({ t: Date.now(), r: bytesToHex(randomBytes(16)), from }));
 }
 
-/** Hex of the deterministic JSON of the transaction without signature, validatorAttestations and fee. */
+/** Hex of the deterministic JSON of the transaction without signature and fee. */
 export function serializeForSigning(tx: Transaction): string {
     const txCopy: Record<string, unknown> = { ...tx };
     delete txCopy.signature;
-    delete txCopy.validatorAttestations;
     delete txCopy.fee;
     return encodeDeterministicJSON(txCopy, { asHex: true });
 }
@@ -143,23 +143,12 @@ export function computeTxId(tx: Transaction): string {
     return bytesToHex(blake2b256(image));
 }
 
-/** Attestation preimage: Blake2b-256(chainId || txid || from || sequence) as hex. */
-export function serializeForAttestation(tx: Pick<Transaction, 'chainId' | 'from' | 'sequence'>, txid: string): string {
-    const preimage = concat(
-        utf8ToBytes(String(tx.chainId)),
-        hexToBytes(txid),
-        utf8ToBytes(tx.from),
-        utf8ToBytes(String(tx.sequence))
-    );
-    return bytesToHex(blake2b256(preimage));
-}
-
 /** Id of a transaction waiting for signatures: Blake2b-256 of the exact bytes the signers sign. */
 export function pendingTxId(unsignedTx: ContractCallTransaction): string {
     return bytesToHex(blake2b256(hexToBytes(serializeForSigning(unsignedTx))));
 }
 
-/** Unsigned transfer with the fee placeholder the node expects (fee.to is set by the engine). */
+/** Unsigned transfer with the fixed fee amount in the transfer's asset; the fee goes to the attester named in the block. */
 export function buildTransferTx(p: TransferParams): TransferTransaction {
     if (p.asset !== AssetId.SBRIT && p.asset !== AssetId.SSC) {
         throw new Error('Invalid or missing asset');
@@ -187,9 +176,8 @@ export function buildTransferTx(p: TransferParams): TransferTransaction {
         sequence: p.sequence,
         timestamp: p.timestamp ?? Date.now(),
         salt: p.salt ?? generateSalt(p.from),
-        fee: { amount: p.asset === AssetId.SBRIT ? SBRIT_FEE_AMOUNT : SSC_FEE_AMOUNT, asset: p.asset, to: '' },
-        signature: [],
-        validatorAttestations: []
+        fee: { amount: p.asset === AssetId.SBRIT ? SBRIT_FEE_AMOUNT : SSC_FEE_AMOUNT, asset: p.asset },
+        signature: []
     };
 }
 
@@ -235,9 +223,8 @@ export function buildContractCallTx(p: ContractCallParams): ContractCallTransact
         sequence: p.sequence,
         timestamp: p.timestamp ?? Date.now(),
         salt: p.salt ?? generateSalt(p.from),
-        fee: { amount: SBRIT_FEE_AMOUNT, asset: AssetId.SBRIT, to: '' },
+        fee: { amount: SBRIT_FEE_AMOUNT, asset: AssetId.SBRIT },
         signature: [],
-        validatorAttestations: [],
         data: p.data === undefined ? '' : encodeDeterministicJSON(p.data, { asHex: true }),
         method: p.method,
         codeHash: p.codeHash,
@@ -320,7 +307,7 @@ export function combineTxWithSigs(tx: ContractCallTransaction, signatures: Trans
             throw new Error('Invalid signature: missing or invalid signature');
         }
     }
-    return { ...tx, signature: signatures, validatorAttestations: [] };
+    return { ...tx, signature: signatures };
 }
 
 /** The node's signature rules: non-empty, at most MAX_ALLOWED_SIGNATURES, unique public keys, every signature verifies over the preimage. */

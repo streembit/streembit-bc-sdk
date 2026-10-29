@@ -257,7 +257,7 @@ describe(`Wallet core against the vectors (${vectors.generatedBy.repository} ${v
             const v = vectors.transfer.tx;
             const ssc = W.buildTransferTx({ chainId: v.chainId, version: v.version, from: v.from, to: v.to, amount: '5', asset: AssetId.SSC, sequence: 1 });
             assert.equal(ssc.asset, AssetId.SSC);
-            assert.deepEqual(ssc.fee, { amount: SSC_FEE_AMOUNT, asset: AssetId.SSC, to: '' });
+            assert.deepEqual(ssc.fee, { amount: SSC_FEE_AMOUNT, asset: AssetId.SSC });
             assert.equal(vectors.transfer.tx.fee.amount, SBRIT_FEE_AMOUNT);
             assert.throws(() => W.buildTransferTx({ chainId: v.chainId, version: v.version, from: v.from, to: v.to, amount: '5', asset: 'GOLD' as AssetId, sequence: 1 }), /asset/);
             assert.throws(() => W.buildTransferTx({ chainId: v.chainId, version: v.version, from: '', to: v.to, amount: '5', asset: AssetId.SBRIT, sequence: 1 }), /from/);
@@ -277,7 +277,7 @@ describe(`Wallet core against the vectors (${vectors.generatedBy.repository} ${v
 
         it('multisig: detached signatures, combineTxWithSigs, the node signature rules and pendingTxId', async () => {
             const v = vectors.contractCall;
-            const unsigned: ContractCallTransaction = { ...v.tx, signature: [], validatorAttestations: [] };
+            const unsigned: ContractCallTransaction = { ...v.tx, signature: [] };
             assert.equal(W.pendingTxId(unsigned), v.pendingTxId);
             assert.equal(W.pendingTxId(unsigned), Buffer.from(blake.blake2b(Buffer.from(v.preimageHex, 'hex'), undefined, 32)).toString('hex'));
 
@@ -312,12 +312,6 @@ describe(`Wallet core against the vectors (${vectors.generatedBy.repository} ${v
             assert.match(W.validateTransactionSignatures({ ...signed, amount: '1' }).error!, /Invalid signature for publickey/);
             assert.throws(() => W.combineTxWithSigs(unsigned, []), /At least one signature/);
             assert.throws(() => W.combineTxWithSigs(unsigned, [{ publickey: '', signature: 'ab' }]), /publickey/);
-        });
-
-        it('attestation preimage is Blake2b-256(chainId || txid || from || sequence)', () => {
-            const v = vectors.transfer;
-            const expected = hex(W.blake2b256(Buffer.concat([Buffer.from(String(v.tx.chainId)), Buffer.from(v.txid, 'hex'), Buffer.from(v.tx.from), Buffer.from(String(v.tx.sequence))])));
-            assert.equal(W.serializeForAttestation(v.tx, v.txid), expected);
         });
 
         it('signTransaction refuses signers that do not control from, as the node creators do', async () => {

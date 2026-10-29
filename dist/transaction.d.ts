@@ -5,8 +5,9 @@
  * wallet obtains from the Accountable Node API (./api). Contract calls also need the contract's codeHash,
  * sandboxHash and location from the API (the node reads them from acct/<cid>/meta).
  *
- * Signing preimage (serializeForSigning): the deterministic JSON of the transaction without signature,
- * validatorAttestations and fee, as hex.
+ * Signing preimage (serializeForSigning): the deterministic JSON of the transaction without signature and
+ * fee, as hex. The fee amount and asset stay on the transaction; the fee recipient is the attester the block
+ * header names, so no transaction carries one.
  * txid: Blake2b-256 over chainId || timestamp || payload || JSON(signature) || salt || sequence.
  *
  * Multisig: getTxSignatures produces the detached signatures of several signers over the same preimage,
@@ -70,15 +71,13 @@ export declare function validateAmount(amount: string, options?: {
 }): boolean;
 /** Fresh salt for a transaction: createSalt over the time, random bytes and the sender (32 hex chars). */
 export declare function generateSalt(from: string): string;
-/** Hex of the deterministic JSON of the transaction without signature, validatorAttestations and fee. */
+/** Hex of the deterministic JSON of the transaction without signature and fee. */
 export declare function serializeForSigning(tx: Transaction): string;
 /** txid of a signed transaction. 64 hex chars. */
 export declare function computeTxId(tx: Transaction): string;
-/** Attestation preimage: Blake2b-256(chainId || txid || from || sequence) as hex. */
-export declare function serializeForAttestation(tx: Pick<Transaction, 'chainId' | 'from' | 'sequence'>, txid: string): string;
 /** Id of a transaction waiting for signatures: Blake2b-256 of the exact bytes the signers sign. */
 export declare function pendingTxId(unsignedTx: ContractCallTransaction): string;
-/** Unsigned transfer with the fee placeholder the node expects (fee.to is set by the engine). */
+/** Unsigned transfer with the fixed fee amount in the transfer's asset; the fee goes to the attester named in the block. */
 export declare function buildTransferTx(p: TransferParams): TransferTransaction;
 /** Unsigned contract call, as the node's ContractCallTxCreator assembles it. */
 export declare function buildContractCallTx(p: ContractCallParams): ContractCallTransaction;
