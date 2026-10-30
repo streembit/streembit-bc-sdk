@@ -16,10 +16,12 @@ exports.isContractAddress = isContractAddress;
 exports.decodeAddress = decodeAddress;
 exports.getAddressType = getAddressType;
 exports.publicKeyOwnsAddress = publicKeyOwnsAddress;
+exports.isBitcoinAddress = isBitcoinAddress;
 const streembit_bc_types_1 = require("streembit-bc-types");
 const hashing_1 = require("./hashing");
 const base58_1 = require("./base58");
 const encoding_1 = require("./encoding");
+const base_1 = require("@scure/base");
 /** User address from a public key (33-byte compressed or 65-byte uncompressed; wallets always use compressed). */
 function createUserAddress(publicKey) {
     const bytes = typeof publicKey === 'string' ? (0, encoding_1.hexToBytes)(publicKey) : publicKey;
@@ -140,6 +142,78 @@ function publicKeyOwnsAddress(address, publicKeyHex) {
     }
     try {
         return createUserAddress(publicKeyHex) === address;
+    }
+    catch {
+        return false;
+    }
+}
+const BITCOIN_LEGACY_VERSIONS = {
+    mainnet: [0x00, 0x05],
+    testnet: [0x6f, 0xc4],
+    regtest: [0x6f, 0xc4]
+};
+const BITCOIN_HRP = {
+    mainnet: 'bc',
+    testnet: 'tb',
+    regtest: 'bcrt'
+};
+function isSegwitAddress(address, hrp) {
+    const lower = address.toLowerCase();
+    if (address !== lower && address !== address.toUpperCase()) {
+        return false;
+    }
+    if (!lower.startsWith(`${hrp}1`)) {
+        return false;
+    }
+    let version;
+    let program;
+    try {
+        const decoded = base_1.bech32.decode(lower, 90);
+        if (decoded.prefix !== hrp || decoded.words.length === 0) {
+            return false;
+        }
+        version = decoded.words[0];
+        if (version !== 0) {
+            return false;
+        }
+        program = base_1.bech32.fromWords(decoded.words.slice(1));
+        return program.length === 20 || program.length === 32;
+    }
+    catch {
+        // not bech32: a witness version above 0 is bech32m
+    }
+    try {
+        const decoded = base_1.bech32m.decode(lower, 90);
+        if (decoded.prefix !== hrp || decoded.words.length === 0) {
+            return false;
+        }
+        version = decoded.words[0];
+        if (version < 1 || version > 16) {
+            return false;
+        }
+        program = base_1.bech32m.fromWords(decoded.words.slice(1));
+        return program.length >= 2 && program.length <= 40;
+    }
+    catch {
+        return false;
+    }
+}
+/** True when the string is a well-formed Bitcoin address of the network: legacy Base58Check, bech32 or bech32m. */
+function isBitcoinAddress(address, network) {
+    if (typeof address !== 'string' || address.length === 0 || address.length > 90) {
+        return false;
+    }
+    const hrp = BITCOIN_HRP[network];
+    const versions = BITCOIN_LEGACY_VERSIONS[network];
+    if (!hrp || !versions) {
+        return false;
+    }
+    if (address.toLowerCase().startsWith(`${hrp}1`)) {
+        return isSegwitAddress(address, hrp);
+    }
+    try {
+        const { version, payload } = (0, base58_1.base58checkDecodeWithVersion)(address);
+        return payload.length === 20 && versions.includes(version);
     }
     catch {
         return false;

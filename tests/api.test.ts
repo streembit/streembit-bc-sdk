@@ -27,7 +27,7 @@ function handle(req: IncomingMessage, res: ServerResponse, hits: string[] = []):
             res.writeHead(status, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(body));
         };
-        if (url === '/api/v1/status') return reply(200, { chainId: 1337, version: 1, network: 'devnet', height: 42 });
+        if (url === '/api/v1/status') return reply(200, { chainId: 1337, version: 1, network: 'devnet', height: 42, tip: 'ab'.repeat(32) });
         if (url === `/api/v1/accounts/${ACCOUNT}`) return reply(200, { address: ACCOUNT, balance: '12.5', sequence: 3 });
         if (url === `/api/v1/accounts/${ACCOUNT}/transactions?limit=2`) return reply(200, { transactions: [{ txid: 'a1', type: 'transfer', from: ACCOUNT, to: CONTRACT, amount: 1, timestamp: 5 }, 'junk'] });
         if (url === `/api/v1/contracts/${CONTRACT}`) return reply(200, { cid: CONTRACT, codeHash: 'ab', sandboxHash: 'cd', location: 'file_system' });
@@ -56,7 +56,7 @@ describe('Accountable Node API client', () => {
     });
 
     it('reads status, account, transactions and contract metadata', async () => {
-        assert.deepEqual(await api.fetchStatus(), { chainId: 1337, version: 1, network: 'devnet', height: 42 });
+        assert.deepEqual(await api.fetchStatus(), { chainId: 1337, version: 1, network: 'devnet', height: 42, tip: 'ab'.repeat(32) });
         assert.deepEqual(await api.fetchAccount(ACCOUNT), { address: ACCOUNT, balance: '12.5', sequence: 3 });
         const list = await api.fetchTransactions(ACCOUNT, 2);
         assert.equal(list.length, 1);

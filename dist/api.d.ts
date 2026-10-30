@@ -49,6 +49,8 @@ export interface ChainStatus {
     version: number;
     network: string;
     height: number;
+    /** Hash of the tip block, '' on an empty chain; two addresses on the same chain report the same tip at the same height */
+    tip: string;
 }
 export interface AccountInfo {
     address: string;

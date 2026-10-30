@@ -62,6 +62,8 @@ export interface ChainStatus {
     version: number;
     network: string;
     height: number;
+    /** Hash of the tip block, '' on an empty chain; two addresses on the same chain report the same tip at the same height */
+    tip: string;
 }
 
 export interface AccountInfo {
@@ -219,7 +221,8 @@ export function fetchStatus(from: ApiAddress = 'read'): Promise<ChainStatus> {
             chainId: expectNumber(body, 'chainId', 'status'),
             version: expectNumber(body, 'version', 'status'),
             network: expectString(body, 'network', 'status'),
-            height: typeof body.height === 'number' ? body.height : 0
+            height: typeof body.height === 'number' ? body.height : 0,
+            tip: typeof body.tip === 'string' ? body.tip : ''
         };
     });
 }

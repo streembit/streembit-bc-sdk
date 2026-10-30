@@ -10,6 +10,7 @@ import { ADDRESS_PREFIX_USER, ADDRESS_PREFIX_CONTRACT } from 'streembit-bc-types
 import { hash160 } from './hashing';
 import { base58Decode, base58checkDecode, base58checkEncode, base58checkDecodeWithVersion } from './base58';
 import { hexToBytes, utf8ToBytes, concat } from './encoding';
+import { bech32, bech32m } from '@scure/base';
 
 export type AddressType = 'user' | 'contract';
 
@@ -131,6 +132,89 @@ export function publicKeyOwnsAddress(address: string, publicKeyHex: string): boo
     }
     try {
         return createUserAddress(publicKeyHex) === address;
+    } catch {
+        return false;
+    }
+}
+
+// ============================================================================
+// Bitcoin address format check, for the external payment contract (the Accountable Node settles SBRIT
+// sales against Bitcoin payments). Syntax only: a well-formed address of the given network, nothing about
+// who controls it. Legacy addresses are Base58Check with the network's P2PKH or P2SH version byte and a
+// 20-byte payload (BIP 13); segwit addresses are bech32 for witness version 0 (BIP 173) and bech32m for
+// versions 1 to 16 (BIP 350).
+// ============================================================================
+
+export type BitcoinNetwork = 'mainnet' | 'testnet' | 'regtest';
+
+const BITCOIN_LEGACY_VERSIONS: Record<BitcoinNetwork, number[]> = {
+    mainnet: [0x00, 0x05],
+    testnet: [0x6f, 0xc4],
+    regtest: [0x6f, 0xc4]
+};
+
+const BITCOIN_HRP: Record<BitcoinNetwork, string> = {
+    mainnet: 'bc',
+    testnet: 'tb',
+    regtest: 'bcrt'
+};
+
+function isSegwitAddress(address: string, hrp: string): boolean {
+    const lower = address.toLowerCase();
+    if (address !== lower && address !== address.toUpperCase()) {
+        return false;
+    }
+    if (!lower.startsWith(`${hrp}1`)) {
+        return false;
+    }
+    let version: number;
+    let program: Uint8Array;
+    try {
+        const decoded = bech32.decode(lower, 90);
+        if (decoded.prefix !== hrp || decoded.words.length === 0) {
+            return false;
+        }
+        version = decoded.words[0];
+        if (version !== 0) {
+            return false;
+        }
+        program = bech32.fromWords(decoded.words.slice(1));
+        return program.length === 20 || program.length === 32;
+    } catch {
+        // not bech32: a witness version above 0 is bech32m
+    }
+    try {
+        const decoded = bech32m.decode(lower, 90);
+        if (decoded.prefix !== hrp || decoded.words.length === 0) {
+            return false;
+        }
+        version = decoded.words[0];
+        if (version < 1 || version > 16) {
+            return false;
+        }
+        program = bech32m.fromWords(decoded.words.slice(1));
+        return program.length >= 2 && program.length <= 40;
+    } catch {
+        return false;
+    }
+}
+
+/** True when the string is a well-formed Bitcoin address of the network: legacy Base58Check, bech32 or bech32m. */
+export function isBitcoinAddress(address: string, network: BitcoinNetwork): boolean {
+    if (typeof address !== 'string' || address.length === 0 || address.length > 90) {
+        return false;
+    }
+    const hrp = BITCOIN_HRP[network];
+    const versions = BITCOIN_LEGACY_VERSIONS[network];
+    if (!hrp || !versions) {
+        return false;
+    }
+    if (address.toLowerCase().startsWith(`${hrp}1`)) {
+        return isSegwitAddress(address, hrp);
+    }
+    try {
+        const { version, payload } = base58checkDecodeWithVersion(address);
+        return payload.length === 20 && versions.includes(version);
     } catch {
         return false;
     }

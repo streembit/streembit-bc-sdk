@@ -178,7 +178,8 @@ function fetchStatus(from = 'read') {
             chainId: expectNumber(body, 'chainId', 'status'),
             version: expectNumber(body, 'version', 'status'),
             network: expectString(body, 'network', 'status'),
-            height: typeof body.height === 'number' ? body.height : 0
+            height: typeof body.height === 'number' ? body.height : 0,
+            tip: typeof body.tip === 'string' ? body.tip : ''
         };
     });
 }

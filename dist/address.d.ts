@@ -34,4 +34,7 @@ export declare function getAddressType(address: string): AddressType | 'invalid'
  * every transaction, so a wallet checks it before signing.
  */
 export declare function publicKeyOwnsAddress(address: string, publicKeyHex: string): boolean;
+export type BitcoinNetwork = 'mainnet' | 'testnet' | 'regtest';
+/** True when the string is a well-formed Bitcoin address of the network: legacy Base58Check, bech32 or bech32m. */
+export declare function isBitcoinAddress(address: string, network: BitcoinNetwork): boolean;
 //# sourceMappingURL=address.d.ts.map
