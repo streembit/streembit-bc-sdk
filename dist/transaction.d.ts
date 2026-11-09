@@ -18,7 +18,7 @@
  * The transaction types and the protocol constants come from streembit-bc-types; nothing is redeclared here.
  */
 import { AssetId, ContractLocation } from 'streembit-bc-types';
-import type { Transaction, TransferTransaction, ContractCallTransaction, TransactionSignature } from 'streembit-bc-types';
+import type { Transaction, TransferTransaction, ContractCallTransaction, BootstrapCallTx, TransactionSignature } from 'streembit-bc-types';
 import type { Signer } from './signing';
 export interface TransferParams {
     chainId: number;
@@ -81,14 +81,16 @@ export declare function pendingTxId(unsignedTx: ContractCallTransaction): string
 export declare function buildTransferTx(p: TransferParams): TransferTransaction;
 /** Unsigned contract call, as the node's ContractCallTxCreator assembles it. */
 export declare function buildContractCallTx(p: ContractCallParams): ContractCallTransaction;
+/** Unsigned bootstrap method call: the contract call's fields, fee-free by type (genesis creates no SBRIT). */
+export declare function buildBootstrapCallTx(p: ContractCallParams): BootstrapCallTx;
 /** Detached signatures of the signers over the transaction's signing preimage. */
 export declare function getTxSignatures(tx: Transaction, signers: Signer[]): Promise<TransactionSignature[]>;
 /** Sign the transaction with the signers and set tx.signature. As the node's creators, refuses when no signer controls tx.from. */
 export declare function signTransaction<T extends Transaction>(tx: T, signers: Signer[]): Promise<T>;
 /** The node's ownership rule: at least one signature's public key controls tx.from. False when there are no signatures. */
 export declare function validateTransactionAddressOwnership(tx: Transaction): boolean;
-/** Put collected signatures into an unsigned contract call. */
-export declare function combineTxWithSigs(tx: ContractCallTransaction, signatures: TransactionSignature[]): ContractCallTransaction;
+/** Put collected signatures into an unsigned contract call or bootstrap call. */
+export declare function combineTxWithSigs<T extends ContractCallTransaction | BootstrapCallTx>(tx: T, signatures: TransactionSignature[]): T;
 /** The node's signature rules: non-empty, at most MAX_ALLOWED_SIGNATURES, unique public keys, every signature verifies over the preimage. */
 export declare function validateTransactionSignatures(tx: Transaction): SignatureValidationResult;
 /** Deterministic JSON the node accepts for submission */

@@ -21,7 +21,7 @@
 import type { Decimal } from 'decimal.js';
 import { Dec } from './decimal';
 import { TxType, AssetId, SBRIT_FEE_AMOUNT, SSC_FEE_AMOUNT, ContractLocation, MAX_ALLOWED_SIGNATURES } from 'streembit-bc-types';
-import type { Transaction, TransferTransaction, ContractCallTransaction, TransactionSignature } from 'streembit-bc-types';
+import type { Transaction, TransferTransaction, ContractCallTransaction, BootstrapCallTx, TransactionSignature } from 'streembit-bc-types';
 import { encodeDeterministicJSON, bytesToHex, concat, utf8ToBytes, hexToBytes, randomBytes } from './encoding';
 import { blake2b256, createSalt } from './hashing';
 import { publicKeyOwnsAddress } from './address';
@@ -122,8 +122,8 @@ function txIdPayload(tx: Transaction): string {
         amount: tx.amount,
         asset: tx.asset
     };
-    if (tx.type === TxType.CONTRACT_CALL) {
-        const callTx = tx as ContractCallTransaction;
+    if (tx.type === TxType.CONTRACT_CALL || tx.type === TxType.BOOTSTRAP_CALL) {
+        const callTx = tx as ContractCallTransaction | BootstrapCallTx;
         payload.method = callTx.method;
         payload.data = callTx.data;
     }
@@ -234,6 +234,12 @@ export function buildContractCallTx(p: ContractCallParams): ContractCallTransact
     };
 }
 
+/** Unsigned bootstrap method call: the contract call's fields, fee-free by type (genesis creates no SBRIT). */
+export function buildBootstrapCallTx(p: ContractCallParams): BootstrapCallTx {
+    const { fee: _fee, type: _type, ...call } = buildContractCallTx(p);
+    return { ...call, type: TxType.BOOTSTRAP_CALL, fee: null };
+}
+
 /** Detached signatures of the signers over the transaction's signing preimage. */
 export async function getTxSignatures(tx: Transaction, signers: Signer[]): Promise<TransactionSignature[]> {
     const dataHex = serializeForSigning(tx);
@@ -264,12 +270,12 @@ export function validateTransactionAddressOwnership(tx: Transaction): boolean {
     return tx.signature.some(sig => publicKeyOwnsAddress(tx.from, sig.publickey));
 }
 
-/** Put collected signatures into an unsigned contract call. */
-export function combineTxWithSigs(tx: ContractCallTransaction, signatures: TransactionSignature[]): ContractCallTransaction {
+/** Put collected signatures into an unsigned contract call or bootstrap call. */
+export function combineTxWithSigs<T extends ContractCallTransaction | BootstrapCallTx>(tx: T, signatures: TransactionSignature[]): T {
     if (signatures.length === 0) {
         throw new Error('At least one signature is required');
     }
-    if (tx.type !== TxType.CONTRACT_CALL) {
+    if (tx.type !== TxType.CONTRACT_CALL && tx.type !== TxType.BOOTSTRAP_CALL) {
         throw new Error('Transaction is not a contract call transaction');
     }
     if (!tx.from || typeof tx.from !== 'string') {

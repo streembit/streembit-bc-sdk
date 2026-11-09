@@ -26,6 +26,7 @@ exports.computeTxId = computeTxId;
 exports.pendingTxId = pendingTxId;
 exports.buildTransferTx = buildTransferTx;
 exports.buildContractCallTx = buildContractCallTx;
+exports.buildBootstrapCallTx = buildBootstrapCallTx;
 exports.getTxSignatures = getTxSignatures;
 exports.signTransaction = signTransaction;
 exports.validateTransactionAddressOwnership = validateTransactionAddressOwnership;
@@ -82,7 +83,7 @@ function txIdPayload(tx) {
         amount: tx.amount,
         asset: tx.asset
     };
-    if (tx.type === streembit_bc_types_1.TxType.CONTRACT_CALL) {
+    if (tx.type === streembit_bc_types_1.TxType.CONTRACT_CALL || tx.type === streembit_bc_types_1.TxType.BOOTSTRAP_CALL) {
         const callTx = tx;
         payload.method = callTx.method;
         payload.data = callTx.data;
@@ -183,6 +184,11 @@ function buildContractCallTx(p) {
         location: p.location ?? streembit_bc_types_1.ContractLocation.FS
     };
 }
+/** Unsigned bootstrap method call: the contract call's fields, fee-free by type (genesis creates no SBRIT). */
+function buildBootstrapCallTx(p) {
+    const { fee: _fee, type: _type, ...call } = buildContractCallTx(p);
+    return { ...call, type: streembit_bc_types_1.TxType.BOOTSTRAP_CALL, fee: null };
+}
 /** Detached signatures of the signers over the transaction's signing preimage. */
 async function getTxSignatures(tx, signers) {
     const dataHex = serializeForSigning(tx);
@@ -210,12 +216,12 @@ function validateTransactionAddressOwnership(tx) {
     }
     return tx.signature.some(sig => (0, address_1.publicKeyOwnsAddress)(tx.from, sig.publickey));
 }
-/** Put collected signatures into an unsigned contract call. */
+/** Put collected signatures into an unsigned contract call or bootstrap call. */
 function combineTxWithSigs(tx, signatures) {
     if (signatures.length === 0) {
         throw new Error('At least one signature is required');
     }
-    if (tx.type !== streembit_bc_types_1.TxType.CONTRACT_CALL) {
+    if (tx.type !== streembit_bc_types_1.TxType.CONTRACT_CALL && tx.type !== streembit_bc_types_1.TxType.BOOTSTRAP_CALL) {
         throw new Error('Transaction is not a contract call transaction');
     }
     if (!tx.from || typeof tx.from !== 'string') {
