@@ -144,7 +144,7 @@ export function computeTxId(tx: Transaction): string {
 }
 
 /** Id of a transaction waiting for signatures: Blake2b-256 of the exact bytes the signers sign. */
-export function pendingTxId(unsignedTx: ContractCallTransaction): string {
+export function pendingTxId(unsignedTx: ContractCallTransaction | BootstrapCallTx): string {
     return bytesToHex(blake2b256(hexToBytes(serializeForSigning(unsignedTx))));
 }
 

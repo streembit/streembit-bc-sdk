@@ -76,7 +76,7 @@ export declare function serializeForSigning(tx: Transaction): string;
 /** txid of a signed transaction. 64 hex chars. */
 export declare function computeTxId(tx: Transaction): string;
 /** Id of a transaction waiting for signatures: Blake2b-256 of the exact bytes the signers sign. */
-export declare function pendingTxId(unsignedTx: ContractCallTransaction): string;
+export declare function pendingTxId(unsignedTx: ContractCallTransaction | BootstrapCallTx): string;
 /** Unsigned transfer with the fixed fee amount in the transfer's asset; the fee goes to the attester named in the block. */
 export declare function buildTransferTx(p: TransferParams): TransferTransaction;
 /** Unsigned contract call, as the node's ContractCallTxCreator assembles it. */
