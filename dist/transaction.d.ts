@@ -29,7 +29,7 @@ export interface TransferParams {
     to: string;
     /** decimal string */
     amount: string;
-    /** SBRIT or SSC; the fee is charged in the same asset */
+    /** SBRIT; the fee is charged in the same asset */
     asset: AssetId;
     /** the sender's next sequence (current + 1) */
     sequence: number;

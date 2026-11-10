@@ -22,7 +22,7 @@ import { mnemonicToSeedSync } from 'bip39';
 import { BIP32Factory } from 'bip32';
 import * as ecc from 'tiny-secp256k1';
 import * as blake from 'blakejs';
-import { AssetId, SBRIT_FEE_AMOUNT, SSC_FEE_AMOUNT } from 'streembit-bc-types';
+import { AssetId, SBRIT_FEE_AMOUNT } from 'streembit-bc-types';
 import type { TransferTransaction, ContractCallTransaction, TransactionSignature } from 'streembit-bc-types';
 
 import * as W from '../src';
@@ -253,11 +253,8 @@ describe(`Wallet core against the vectors (${vectors.generatedBy.repository} ${v
             assert.deepEqual(JSON.parse(W.txToString(tx)), JSON.parse(JSON.stringify(tx)));
         });
 
-        it('builds an SSC transfer with the SSC fee and refuses an unknown asset', () => {
+        it('refuses an unknown asset', () => {
             const v = vectors.transfer.tx;
-            const ssc = W.buildTransferTx({ chainId: v.chainId, version: v.version, from: v.from, to: v.to, amount: '5', asset: AssetId.SSC, sequence: 1 });
-            assert.equal(ssc.asset, AssetId.SSC);
-            assert.deepEqual(ssc.fee, { amount: SSC_FEE_AMOUNT, asset: AssetId.SSC });
             assert.equal(vectors.transfer.tx.fee.amount, SBRIT_FEE_AMOUNT);
             assert.throws(() => W.buildTransferTx({ chainId: v.chainId, version: v.version, from: v.from, to: v.to, amount: '5', asset: 'GOLD' as AssetId, sequence: 1 }), /asset/);
             assert.throws(() => W.buildTransferTx({ chainId: v.chainId, version: v.version, from: '', to: v.to, amount: '5', asset: AssetId.SBRIT, sequence: 1 }), /from/);

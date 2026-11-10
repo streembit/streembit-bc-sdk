@@ -101,7 +101,7 @@ function pendingTxId(unsignedTx) {
 }
 /** Unsigned transfer with the fixed fee amount in the transfer's asset; the fee goes to the attester named in the block. */
 function buildTransferTx(p) {
-    if (p.asset !== streembit_bc_types_1.AssetId.SBRIT && p.asset !== streembit_bc_types_1.AssetId.SSC) {
+    if (p.asset !== streembit_bc_types_1.AssetId.SBRIT) {
         throw new Error('Invalid or missing asset');
     }
     if (!p.from || p.from.length === 0) {
@@ -127,7 +127,7 @@ function buildTransferTx(p) {
         sequence: p.sequence,
         timestamp: p.timestamp ?? Date.now(),
         salt: p.salt ?? generateSalt(p.from),
-        fee: { amount: p.asset === streembit_bc_types_1.AssetId.SBRIT ? streembit_bc_types_1.SBRIT_FEE_AMOUNT : streembit_bc_types_1.SSC_FEE_AMOUNT, asset: p.asset },
+        fee: { amount: streembit_bc_types_1.SBRIT_FEE_AMOUNT, asset: p.asset },
         signature: []
     };
 }

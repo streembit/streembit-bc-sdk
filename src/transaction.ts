@@ -20,7 +20,7 @@
 
 import type { Decimal } from 'decimal.js';
 import { Dec } from './decimal';
-import { TxType, AssetId, SBRIT_FEE_AMOUNT, SSC_FEE_AMOUNT, ContractLocation, MAX_ALLOWED_SIGNATURES } from 'streembit-bc-types';
+import { TxType, AssetId, SBRIT_FEE_AMOUNT, ContractLocation, MAX_ALLOWED_SIGNATURES } from 'streembit-bc-types';
 import type { Transaction, TransferTransaction, ContractCallTransaction, BootstrapCallTx, TransactionSignature } from 'streembit-bc-types';
 import { encodeDeterministicJSON, bytesToHex, concat, utf8ToBytes, hexToBytes, randomBytes } from './encoding';
 import { blake2b256, createSalt } from './hashing';
@@ -38,7 +38,7 @@ export interface TransferParams {
     to: string;
     /** decimal string */
     amount: string;
-    /** SBRIT or SSC; the fee is charged in the same asset */
+    /** SBRIT; the fee is charged in the same asset */
     asset: AssetId;
     /** the sender's next sequence (current + 1) */
     sequence: number;
@@ -150,7 +150,7 @@ export function pendingTxId(unsignedTx: ContractCallTransaction | BootstrapCallT
 
 /** Unsigned transfer with the fixed fee amount in the transfer's asset; the fee goes to the attester named in the block. */
 export function buildTransferTx(p: TransferParams): TransferTransaction {
-    if (p.asset !== AssetId.SBRIT && p.asset !== AssetId.SSC) {
+    if (p.asset !== AssetId.SBRIT) {
         throw new Error('Invalid or missing asset');
     }
     if (!p.from || p.from.length === 0) {
@@ -176,7 +176,7 @@ export function buildTransferTx(p: TransferParams): TransferTransaction {
         sequence: p.sequence,
         timestamp: p.timestamp ?? Date.now(),
         salt: p.salt ?? generateSalt(p.from),
-        fee: { amount: p.asset === AssetId.SBRIT ? SBRIT_FEE_AMOUNT : SSC_FEE_AMOUNT, asset: p.asset },
+        fee: { amount: SBRIT_FEE_AMOUNT, asset: p.asset },
         signature: []
     };
 }
