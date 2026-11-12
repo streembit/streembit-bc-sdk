@@ -62,13 +62,17 @@ The API client calls two addresses:
 | Address | Set by | Calls |
 |---|---|---|
 | node | `configureApi(url)`, read back with `apiBaseUrl()` | `submitTransaction`, `fetchContract`, and `fetchStatus('node')`, `fetchAccount(address, 'node')` |
-| read | `configureReadApi(url)`, read back with `readApiBaseUrl()` | `fetchStatus()`, `fetchAccount(address)`, `fetchTransactions(address)` |
+| read | `configureReadApi(url)`, read back with `readApiBaseUrl()` | `fetchStatus()`, `fetchAccount(address)`, `fetchTransactions(address)`, `fetchTransaction(txid)` |
 
 The read address is a read mirror that serves the node's read routes with the same paths and response shapes.
 While none is configured (or after `configureReadApi('')`), `readApiBaseUrl()` returns the node address and every
 call goes to the node, so a consumer that calls `configureApi` only works as before. An error the client raises
 itself (no answer, an answer that is not JSON or lacks a field) names the address it called, "The node API at
 <url>" or "The read API at <url>"; an error answer keeps the server's own message.
+
+`fetchTransaction(txid)` is the exception to that fallback: it reads one transaction, with the height of its block,
+from the read address only and is refused while none is configured, so it never reaches the node. It answers
+`null` while the mirror does not have the transaction.
 
 Sequence rule: build a transaction from the node's state. The mirror can be a block or two behind the node, and a
 second send built on its sequence would reuse a sequence and be rejected, so the chain id, the version and the

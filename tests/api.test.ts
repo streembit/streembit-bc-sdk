@@ -239,3 +239,86 @@ describe('Market reads from the read mirror', () => {
         assert.deepEqual(hits, []);
     });
 });
+
+describe('Transaction lookup from the read mirror', () => {
+    let mirror: Server;
+    let node: Server;
+    let mirrorUrl = '';
+    let nodeUrl = '';
+    const FOUND = 'a'.repeat(64);
+    const CALL = 'b'.repeat(64);
+    const UNKNOWN = '0'.repeat(64);
+    const RECORD = { txid: FOUND, type: 'transfer', from: ACCOUNT, to: CONTRACT, amount: '1.5', asset: 'SBRIT', timestamp: 1762077600000, blockCount: 40, position: 0 };
+    const mirrorHits: string[] = [];
+    const nodeHits: string[] = [];
+
+    async function listen(server: Server): Promise<string> {
+        await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+        const address = server.address();
+        if (!address || typeof address === 'string') throw new Error('server has no port');
+        return `http://127.0.0.1:${address.port}`;
+    }
+
+    before(async () => {
+        mirror = createServer((req, res) => {
+            mirrorHits.push(`${req.method} ${req.url}`);
+            const reply = (status: number, body: unknown): void => {
+                res.writeHead(status, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(body));
+            };
+            const url = req.url || '';
+            if (url === `/api/v1/transactions/${FOUND}`) return reply(200, RECORD);
+            if (url === `/api/v1/transactions/${CALL}`) return reply(200, { ...RECORD, txid: CALL, type: 'contract_call', amount: '0', method: 'register' });
+            if (url === `/api/v1/transactions/${UNKNOWN}`) return reply(404, { error: 'ERR_KEY_NOT_FOUND', message: `Transaction ${UNKNOWN} not found at height 42`, details: { txid: UNKNOWN, height: 42 } });
+            if (url === '/api/v1/transactions/short') return reply(400, { error: 'ERR_INVALID_TRANSACTION', message: 'Invalid transaction id: short', details: { field: 'txid' } });
+            if (url === '/api/v1/transactions/partial') return reply(200, { txid: 'partial', type: 'transfer', from: ACCOUNT, to: CONTRACT, amount: '1', timestamp: 5 });
+            reply(404, { error: 'ERR_KEY_NOT_FOUND', message: `Route GET ${url} not found` });
+        });
+        node = createServer((req, res) => {
+            nodeHits.push(`${req.method} ${req.url}`);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'ERR_INTERNAL', message: 'the node must not be asked' }));
+        });
+        mirrorUrl = await listen(mirror);
+        nodeUrl = await listen(node);
+        api.configureApi(nodeUrl);
+    });
+
+    after(async () => {
+        api.configureReadApi('');
+        await new Promise<void>(resolve => mirror.close(() => resolve()));
+        await new Promise<void>(resolve => node.close(() => resolve()));
+    });
+
+    it('reads a transaction with its asset and block height, and the method of a contract call', async () => {
+        api.configureReadApi(mirrorUrl);
+        const found = await api.fetchTransaction(FOUND);
+        assert.equal(found?.txid, FOUND);
+        assert.equal(found?.amount, '1.5');
+        assert.equal(found?.asset, 'SBRIT');
+        assert.equal(found?.blockCount, 40);
+        assert.equal(found?.method, undefined);
+        const call = await api.fetchTransaction(CALL);
+        assert.equal(call?.method, 'register');
+    });
+
+    it('answers null while the mirror does not have the transaction, and throws on a malformed id, an unknown route and a record without its block', async () => {
+        api.configureReadApi(mirrorUrl);
+        assert.equal(await api.fetchTransaction(UNKNOWN), null);
+        await assert.rejects(api.fetchTransaction('short'), (err: unknown) => err instanceof api.ApiError && err.status === 400 && err.code === 'ERR_INVALID_TRANSACTION');
+        await assert.rejects(api.fetchTransaction('partial'), (err: unknown) => err instanceof api.ApiError && /"asset"/.test(err.message));
+        api.configureReadApi(`${mirrorUrl}/elsewhere`);
+        await assert.rejects(api.fetchTransaction(FOUND), (err: unknown) => err instanceof api.ApiError && err.status === 404);
+    });
+
+    it('never asks the node: with a read address the mirror answers, without one the lookup is refused', async () => {
+        api.configureReadApi(mirrorUrl);
+        mirrorHits.length = 0;
+        nodeHits.length = 0;
+        await api.fetchTransaction(FOUND);
+        assert.deepEqual(mirrorHits, [`GET /api/v1/transactions/${FOUND}`]);
+        api.configureReadApi('');
+        await assert.rejects(api.fetchTransaction(FOUND), (err: unknown) => err instanceof api.ApiError && /read API address/.test(err.message));
+        assert.deepEqual(nodeHits, []);
+    });
+});

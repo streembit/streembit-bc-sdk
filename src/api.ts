@@ -5,9 +5,8 @@
  * The paths and response shapes are the node's public routes (node/src/api/rest/routes/public in the
  * blockchain repository), kept in one place so that a change is made here, and only here. Every response
  * is checked for the fields a wallet needs; a response of another shape is reported as an error instead
- * of producing a wrong transaction. The client carries only the calls a wallet makes today; the node
- * answers more (GET /api/v1/transactions/:txid, and the asset and blockCount record fields) that are added
- * here with their first caller.
+ * of producing a wrong transaction. The client carries only the calls a wallet makes today; a route is
+ * added here with its first caller.
  *
  *   GET  /api/v1/status                              -> { chainId, version, network, height }
  *   GET  /api/v1/accounts/:address                   -> { address, balance, sequence }
@@ -21,6 +20,12 @@
  *                                                       200 status included: the engine wrote the block;
  *                                                       202 status pending: still processing when the
  *                                                       node's wait ended; 400 when rejected
+ *
+ * One transaction by its id is read from the read mirror only; it never goes to the node:
+ *
+ *   GET  /api/v1/transactions/:txid                  -> TransactionRecord with asset and blockCount; 404 with
+ *                                                       details { txid, height } while the mirror does not
+ *                                                       have it: not in a block yet, or not mirrored yet
  *
  * The read mirror alone serves the market reads, the completed SBRIT trades (external-payment sales the
  * Accountable Node settled); they never go to the node:
@@ -60,6 +65,7 @@ const ENDPOINTS = {
     status: () => '/api/v1/status',
     account: (address: string) => `/api/v1/accounts/${encodeURIComponent(address)}`,
     transactions: (address: string, limit: number) => `/api/v1/accounts/${encodeURIComponent(address)}/transactions?limit=${limit}`,
+    transaction: (txid: string) => `/api/v1/transactions/${encodeURIComponent(txid)}`,
     contract: (cid: string) => `/api/v1/contracts/${encodeURIComponent(cid)}`,
     submit: () => '/api/v1/transactions',
     price: () => '/api/v1/market/price',
@@ -101,6 +107,10 @@ export interface TransactionRecord {
     timestamp: number;
     method?: string;
     status?: string;
+    /** the asset of the amount; carried by fetchTransaction */
+    asset?: string;
+    /** height of the block that holds the transaction; carried by fetchTransaction */
+    blockCount?: number;
 }
 
 export interface SubmitResult {
@@ -325,6 +335,36 @@ export function fetchTransactions(address: string, limit = 20): Promise<Transact
     });
 }
 
+/**
+ * One transaction by its id, with the height of the block that holds it, or null while the mirror does not have
+ * it (the mirror's 404 with details.height: not in a block yet, or not mirrored yet). Any other failure throws,
+ * a malformed id and a 404 of an unknown route included. From the read address only: it never goes to the node.
+ */
+export async function fetchTransaction(txid: string): Promise<TransactionRecord | null> {
+    requireReadAddress('Transaction lookups');
+    try {
+        return await request('read', ENDPOINTS.transaction(txid), { method: 'GET' }, body => {
+            if (!isRecord(body)) throw new ApiError('The transaction response is not an object');
+            return {
+                txid: expectString(body, 'txid', 'transaction'),
+                type: expectString(body, 'type', 'transaction'),
+                from: expectString(body, 'from', 'transaction'),
+                to: expectString(body, 'to', 'transaction'),
+                amount: expectString(body, 'amount', 'transaction'),
+                timestamp: expectNumber(body, 'timestamp', 'transaction'),
+                method: typeof body.method === 'string' ? body.method : undefined,
+                asset: expectString(body, 'asset', 'transaction'),
+                blockCount: expectNumber(body, 'blockCount', 'transaction')
+            };
+        });
+    } catch (err) {
+        if (err instanceof ApiError && err.status === 404 && isRecord(err.details) && typeof err.details.height === 'number') {
+            return null;
+        }
+        throw err;
+    }
+}
+
 /** The contract metadata a call transaction must carry: what the node reads from acct/<cid>/meta. From the node address. */
 export function fetchContract(cid: string): Promise<ContractMeta> {
     return request('node', ENDPOINTS.contract(cid), { method: 'GET' }, body => {
@@ -338,10 +378,10 @@ export function fetchContract(cid: string): Promise<ContractMeta> {
     });
 }
 
-/** The market reads go to the read address only; the node has no market routes. */
-function requireReadAddress(): void {
+/** The reads that go to the read address only, never to the node: the market reads (the node has no market routes) and the transaction lookup. */
+function requireReadAddress(reads: string): void {
     if (!readUrl) {
-        throw new ApiError('The market reads need a read API address');
+        throw new ApiError(`${reads} need a read API address`);
     }
 }
 
@@ -350,7 +390,7 @@ function requireReadAddress(): void {
  * failure throws, a 404 of an unknown route included. From the read address only.
  */
 export async function fetchPrice(): Promise<MarketPrice | null> {
-    requireReadAddress();
+    requireReadAddress('The market reads');
     try {
         return await request('read', ENDPOINTS.price(), { method: 'GET' }, body => {
             if (!isRecord(body)) throw new ApiError('The price response is not an object');
@@ -377,7 +417,7 @@ export async function fetchPrice(): Promise<MarketPrice | null> {
 
 /** The newest completed trades, a page at a time; before is the next of the previous page. From the read address only. */
 export async function fetchTrades(limit = 20, before?: string): Promise<TradesPage> {
-    requireReadAddress();
+    requireReadAddress('The market reads');
     return request('read', ENDPOINTS.trades(limit, before), { method: 'GET' }, body => {
         if (!isRecord(body) || !Array.isArray(body.trades)) throw new ApiError('The trades response has no "trades" list');
         const trades = body.trades.map(item => {
