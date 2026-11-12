@@ -1,11 +1,13 @@
 /**
- * Client of the Accountable Node's public HTTP API. Entry point: streembit-bc-sdk/api.
+ * Client of the public HTTP API of the read mirror and of the Accountable Node. Entry point: streembit-bc-sdk/api.
  *
- * The paths and response shapes are the node's public routes (node/src/api/rest/routes/public in the
+ * The paths and response shapes are the public routes (node/src/api/rest/routes/public in the
  * blockchain repository), kept in one place so that a change is made here, and only here. Every response
  * is checked for the fields a wallet needs; a response of another shape is reported as an error instead
  * of producing a wrong transaction. The client carries only the calls a wallet makes today; a route is
  * added here with its first caller.
+ *
+ * Every read goes to the read address, a read mirror. No read goes to the Accountable Node:
  *
  *   GET  /api/v1/status                              -> { chainId, version, network, height }
  *   GET  /api/v1/accounts/:address                   -> { address, balance, sequence }
@@ -15,36 +17,31 @@
  *                                                       newest first, ?limit= up to 50, default 20
  *   GET  /api/v1/contracts/:cid                      -> { cid, codeHash, sandboxHash, location }
  *                                                       of the active version
- *   POST /api/v1/transactions  (body: txToString(tx), canonical JSON) -> { txid, status }
- *                                                       200 status included: the engine wrote the block;
- *                                                       202 status pending: still processing when the
- *                                                       node's wait ended; 400 when rejected
- *
- * One transaction by its id is read from the read mirror only; it never goes to the node:
- *
  *   GET  /api/v1/transactions/:txid                  -> TransactionRecord with asset and blockCount; 404 with
  *                                                       details { txid, height } while the mirror does not
  *                                                       have it: not in a block yet, or not mirrored yet
- *
- * The read mirror alone serves the market reads, the completed SBRIT trades (external-payment sales the
- * Accountable Node settled); they never go to the node:
- *
- *   GET  /api/v1/market/price                        -> MarketPrice of the latest trade; 404 with
+ *   GET  /api/v1/market/price                        -> MarketPrice of the latest trade, a completed SBRIT
+ *                                                       sale the Accountable Node settled; 404 with
  *                                                       details { height } while no trade exists
  *   GET  /api/v1/market/trades?limit=&before=        -> { trades: TradeRecord[], next, height }
  *                                                       newest first, limit up to 100, default 20;
  *                                                       before is the next of the previous page
  *
- * Two addresses. The node address (configureApi) is the Accountable Node itself: submission and contract
- * metadata always go there. The read address (configureReadApi) is a read mirror that serves status,
- * account and history with the same paths and shapes, so that wallet and explorer reads do not load the
- * node; while no read address is configured, reads go to the node address, so a consumer that calls
- * configureApi only sees no change.
+ * The Accountable Node receives one call, the submission of a signed transaction:
  *
- * Sequence rule: a transaction is built from the node's state, never from the read address. The mirror
- * can be a block or two behind the node, and a quick second send built on its sequence would reuse a
- * sequence and be rejected. Code that builds a transaction reads fetchStatus('node') and
- * fetchAccount(address, 'node'); balances, history and the status display use the read address.
+ *   POST /api/v1/transactions  (body: txToString(tx), canonical JSON) -> { txid, status }
+ *                                                       200 status included: the engine wrote the block;
+ *                                                       202 status pending: still processing when the
+ *                                                       node's wait ended; 400 when rejected
+ *
+ * Two addresses, both required. The read address (configureReadApi) is a read mirror; the node address
+ * (configureApi) is the Accountable Node. There is no fallback from one to the other: a read while no read
+ * address is configured is refused with an error, it is never sent to the node.
+ *
+ * Sequence rule: a transaction is built from what the read address reports, the chain id, the version and
+ * the account's sequence. The mirror can be a block or two behind the node, so the node may refuse the
+ * sequence (ERR_INVALID_SEQUENCE) and name the one it expects in details.expected: the transaction is then
+ * built and signed again with that sequence and submitted once more. submitWithSequenceRetry does both steps.
  *
  * A browser wallet calls the API from another origin, so the node answers with CORS headers for the
  * origins in its rest.corsOrigins configuration (GET and POST with a JSON body, including the preflight),
@@ -53,7 +50,7 @@
  * fetch and AbortController only; runs in Node, in the browser and in NW.js.
  *
  * An error answer is { error: <ErrorCode>, message, details } with a 4xx or 5xx status. request() turns
- * it into an ApiError whose message is the node's message, code the node's error, details its details
+ * it into an ApiError whose message is the server's message, code the server's error, details its details
  * and status the HTTP status. A request that did not reach the server, an answer that is not JSON or
  * an answer without a required field is an ApiError with an empty code, and its message names the address
  * it called: "the node API at <url>" or "the read API at <url>".
@@ -97,6 +94,13 @@ export interface SubmitResult {
     txid: string;
     /** included: the engine wrote the block (200); pending: still processing when the node's wait ended (202) */
     status: 'included' | 'pending';
+}
+/** The answer of submitWithSequenceRetry: the node's answer, with the sequence the accepted transaction carries */
+export interface SequencedSubmitResult extends SubmitResult {
+    /** the sequence of the transaction the node accepted */
+    sequence: number;
+    /** true when the node refused the first sequence and the transaction was signed and submitted again with the one it named */
+    resubmitted: boolean;
 }
 /**
  * The latest completed trade. price is the seller's stated USD price of one SBRIT, information only; the
@@ -157,44 +161,49 @@ export declare class ApiError extends Error {
     readonly details: unknown;
     constructor(message: string, status?: number, code?: string, details?: unknown);
 }
-/** Which address a call goes to: the Accountable Node, or the read address (the node while none is configured). */
-export type ApiAddress = 'node' | 'read';
-/** Base URL of the node API, without a trailing slash. Reads use it too while no read address is configured. */
+/** Base URL of the node API, without a trailing slash: the Accountable Node, which receives signed transactions and nothing else. */
 export declare function configureApi(url: string): void;
-/** Base URL of the read API (a read mirror), without a trailing slash; an empty string sends reads to the node again. */
+/** Base URL of the read API (a read mirror), without a trailing slash. Required: every read goes there, and a read while it is not set is refused. */
 export declare function configureReadApi(url: string): void;
 /** The node address. */
 export declare function apiBaseUrl(): string;
-/** The read address, or the node address while no read address is configured. */
+/** The read address; an empty string while none is configured. */
 export declare function readApiBaseUrl(): string;
-/**
- * Chain id, protocol version, network name and height. From the read address by default; code that builds a
- * transaction passes 'node' (see the sequence rule above).
- */
-export declare function fetchStatus(from?: ApiAddress): Promise<ChainStatus>;
+/** Chain id, protocol version, network name and height. From the read address, also for a transaction being built (see the sequence rule above). */
+export declare function fetchStatus(): Promise<ChainStatus>;
 /**
  * Balance and current sequence of an address; an unknown address is answered as balance 0, sequence 0. From
- * the read address by default; the sequence of a transaction being built is read with 'node' (see the
- * sequence rule above).
+ * the read address, also for the sequence of a transaction being built (see the sequence rule above).
  */
-export declare function fetchAccount(address: string, from?: ApiAddress): Promise<AccountInfo>;
+export declare function fetchAccount(address: string): Promise<AccountInfo>;
 /** Most recent transactions of an address, newest first. From the read address. */
 export declare function fetchTransactions(address: string, limit?: number): Promise<TransactionRecord[]>;
 /**
  * One transaction by its id, with the height of the block that holds it, or null while the mirror does not have
  * it (the mirror's 404 with details.height: not in a block yet, or not mirrored yet). Any other failure throws,
- * a malformed id and a 404 of an unknown route included. From the read address only: it never goes to the node.
+ * a malformed id and a 404 of an unknown route included. From the read address.
  */
 export declare function fetchTransaction(txid: string): Promise<TransactionRecord | null>;
-/** The contract metadata a call transaction must carry: what the node reads from acct/<cid>/meta. From the node address. */
+/** The contract metadata a call transaction must carry: the chain's acct/<cid>/meta record of the active version. From the read address, as every read. */
 export declare function fetchContract(cid: string): Promise<ContractMeta>;
 /**
  * The latest completed trade, or null while no trade exists (the mirror's 404 with details.height). Any other
- * failure throws, a 404 of an unknown route included. From the read address only.
+ * failure throws, a 404 of an unknown route included. From the read address.
  */
 export declare function fetchPrice(): Promise<MarketPrice | null>;
-/** The newest completed trades, a page at a time; before is the next of the previous page. From the read address only. */
+/** The newest completed trades, a page at a time; before is the next of the previous page. From the read address. */
 export declare function fetchTrades(limit?: number, before?: string): Promise<TradesPage>;
 /** Submit a signed transaction (the JSON txToString produces) to the node address. */
 export declare function submitTransaction(txJson: string): Promise<SubmitResult>;
+/**
+ * Submit a transaction built on the sequence the read address reported, and follow the sequence rule when the
+ * node refuses it: the read address can be a block or two behind the node, the node then answers
+ * ERR_INVALID_SEQUENCE with the sequence it expects in details.expected, and the transaction is built and signed
+ * again with that sequence and submitted once more. There is one such second submission, never a loop; any
+ * other refusal, and a refusal of the second submission, is thrown as it came.
+ * @param sequence The sequence of the first submission: the account's sequence from fetchAccount plus one
+ * @param signedTransaction Builds and signs the transaction with the given sequence and returns the JSON txToString produces; called once, or twice when the node names another sequence
+ * @returns The node's answer, the sequence the accepted transaction carries and whether it took the second submission
+ */
+export declare function submitWithSequenceRetry(sequence: number, signedTransaction: (sequence: number) => Promise<string>): Promise<SequencedSubmitResult>;
 //# sourceMappingURL=api.d.ts.map

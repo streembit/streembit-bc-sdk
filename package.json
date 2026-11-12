@@ -14,7 +14,7 @@
     "dist"
   ],
   "engines": {
-    "node": ">=22.12"
+    "node": ">=26.0.0"
   },
   "scripts": {
     "clean": "rimraf dist",
@@ -61,7 +61,7 @@
     "streembit-bc-types": "github:streembit/streembit-bc-types"
   },
   "devDependencies": {
-    "@types/node": "22.20.4",
+    "@types/node": "26.6.6",
     "bip32": "^4.0.0",
     "bip39": "^3.1.2",
     "blakejs": "^1.2.1",

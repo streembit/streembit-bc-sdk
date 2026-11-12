@@ -7,11 +7,11 @@ wallet and the desktop wallet.
 - `streembit-bc-sdk`: key creation, HD derivation, addresses, transaction building, the signing preimage,
   the txid, signing through the `Signer` interface, the encrypted wallet file and its metadata, and the
   block hash and creator block signature that the node and the read mirror verify.
-- `streembit-bc-sdk/api`: the client of the node's public HTTP API and of a read mirror that serves its read routes.
+- `streembit-bc-sdk/api`: the client of a read mirror's public HTTP API, for every read, and of the Accountable Node's, for the submission of signed transactions.
 
 Pure JavaScript only (`@noble/curves`, `@noble/hashes`, `@scure/bip32`, `@scure/bip39`, `decimal.js` and
 Web Crypto), no native modules and no WebAssembly. Every function carries the name of the node function it
-replaces and behaves as that function does. The same code runs in Node 22.12 or later, in a browser bundle and
+replaces and behaves as that function does. The same code runs in Node 26 or later, in a browser bundle and
 in NW.js.
 Types and protocol constants come from `streembit-bc-types`; nothing is redeclared here.
 
@@ -24,15 +24,15 @@ npm install github:streembit/streembit-bc-sdk
 ```
 
 `dist/` is committed, as in `streembit-bc-types`, so an install from GitHub needs no build step.
-Node 22.12 or later is required: the noble and scure packages are ECMAScript modules and are required
-from CommonJS.
+Node 26 or later is required, as in the other Streembit projects. The technical floor is Node 22.12: the
+noble and scure packages are ECMAScript modules and are required from CommonJS.
 
 ## Usage
 
 ```typescript
 import { AssetId } from 'streembit-bc-types';
 import { generateMnemonic, seedFromMnemonic, deriveFromSeed, SoftwareSigner, buildTransferTx, signTransaction, txToString, createWalletFile, openWalletFile } from 'streembit-bc-sdk';
-import { configureApi, configureReadApi, fetchStatus, fetchAccount, submitTransaction } from 'streembit-bc-sdk/api';
+import { configureApi, configureReadApi, fetchStatus, fetchAccount, submitWithSequenceRetry } from 'streembit-bc-sdk/api';
 
 // Keys: derive the seed once per session, then accounts from it.
 const mnemonic = generateMnemonic();
@@ -43,40 +43,43 @@ const account = deriveFromSeed(seed, 0, 0);          // { path, privateKey, publ
 const file = await createWalletFile(mnemonic, 'Correct-Horse#2026', { network: 'devnet' });
 const restored = await openWalletFile(file, 'Correct-Horse#2026');
 
-// A transfer: chain id, version and the next sequence come from the node, never from the read address.
-configureApi('https://node.example.org');
-configureReadApi('https://mirror.example.org');      // optional; balances, history and status are read here
-const status = await fetchStatus('node');
-const info = await fetchAccount(account.address, 'node');
-const tx = buildTransferTx({ chainId: status.chainId, version: status.version, from: account.address, to: 'S...', amount: '1.5', asset: AssetId.SBRIT, sequence: info.sequence + 1 });
+// A transfer: chain id, version and the next sequence are read from the read mirror; the node receives the signed transaction only.
+configureReadApi('https://mirror.example.org');      // required: every read goes here
+configureApi('https://node.example.org');            // required: the signed transaction goes here
+const status = await fetchStatus();
+const info = await fetchAccount(account.address);
 const signer = new SoftwareSigner(account.privateKey);
-await signTransaction(tx, [signer]);   // refuses a signer that does not control tx.from
+// Builds and signs with the given sequence; signTransaction refuses a signer that does not control tx.from
+const signed = async (sequence: number) => txToString(await signTransaction(buildTransferTx({ chainId: status.chainId, version: status.version, from: account.address, to: 'S...', amount: '1.5', asset: AssetId.SBRIT, sequence }), [signer]));
+// Submits; when the mirror was behind and the node names another sequence, signs and submits once more with it
+const { txid } = await submitWithSequenceRetry(info.sequence + 1, signed);
 signer.dispose();
-const { txid } = await submitTransaction(txToString(tx));
 ```
 
 ## Node address and read address
 
-The API client calls two addresses:
+The API client calls two addresses, and both are required:
 
 | Address | Set by | Calls |
 |---|---|---|
-| node | `configureApi(url)`, read back with `apiBaseUrl()` | `submitTransaction`, `fetchContract`, and `fetchStatus('node')`, `fetchAccount(address, 'node')` |
-| read | `configureReadApi(url)`, read back with `readApiBaseUrl()` | `fetchStatus()`, `fetchAccount(address)`, `fetchTransactions(address)`, `fetchTransaction(txid)` |
+| read | `configureReadApi(url)`, read back with `readApiBaseUrl()` | every read: `fetchStatus()`, `fetchAccount(address)`, `fetchTransactions(address)`, `fetchTransaction(txid)`, `fetchContract(cid)`, `fetchPrice()`, `fetchTrades()` |
+| node | `configureApi(url)`, read back with `apiBaseUrl()` | the submission of a signed transaction: `submitTransaction`, `submitWithSequenceRetry` |
 
-The read address is a read mirror that serves the node's read routes with the same paths and response shapes.
-While none is configured (or after `configureReadApi('')`), `readApiBaseUrl()` returns the node address and every
-call goes to the node, so a consumer that calls `configureApi` only works as before. An error the client raises
-itself (no answer, an answer that is not JSON or lacks a field) names the address it called, "The node API at
-<url>" or "The read API at <url>"; an error answer keeps the server's own message.
+The read address is a read mirror; the node address is the Accountable Node. No read is sent to the node, and
+there is no fallback: a read while no read address is configured (or after `configureReadApi('')`) is refused
+with the error "The read API address is required". An error the client raises itself (no answer, an answer that
+is not JSON or lacks a field) names the address it called, "The node API at <url>" or "The read API at <url>";
+an error answer keeps the server's own message.
 
-`fetchTransaction(txid)` is the exception to that fallback: it reads one transaction, with the height of its block,
-from the read address only and is refused while none is configured, so it never reaches the node. It answers
-`null` while the mirror does not have the transaction.
+`fetchTransaction(txid)` reads one transaction with the height of its block. It answers `null` while the mirror
+does not have the transaction.
 
-Sequence rule: build a transaction from the node's state. The mirror can be a block or two behind the node, and a
-second send built on its sequence would reuse a sequence and be rejected, so the chain id, the version and the
-sequence of a transaction being built are read with `fetchStatus('node')` and `fetchAccount(address, 'node')`.
+Sequence rule: a transaction is built from what the read address reports, the chain id, the version and the
+account's sequence. The mirror can be a block or two behind the node, so the node may refuse the sequence and
+name the one it expects (`ERR_INVALID_SEQUENCE`, `details.expected`); the transaction is then built and signed
+again with that sequence and submitted once more. `submitWithSequenceRetry(sequence, signedTransaction)` does
+both steps: it calls `signedTransaction` with the sequence to sign with, once, or twice when the node names
+another one, and answers the node's result with the sequence the accepted transaction carries.
 
 ## Modules
 
@@ -91,7 +94,7 @@ sequence of a transaction being built are read with `fetchStatus('node')` and `f
 | `transaction` | transfer and contract call builders, `serializeForSigning`, `computeTxId`, `validateAmount`; multisig: `getTxSignatures`, `signTransaction`, `combineTxWithSigs`, `validateTransactionSignatures`, `validateTransactionAddressOwnership`, `pendingTxId` |
 | `metadata` | the wallet file's record of handed-out addresses and labels |
 | `walletfile` | wallet.json version 1: scrypt key derivation, AES-256-GCM, password policy; two sealed payloads, `{mnemonic}` (`createWalletFile`, `openWalletFile`) and `{privateKey}` for an officer's recorded key (`createKeyFile`, `openKeyFile`); `metadata.kind` says which |
-| `api` | the Accountable Node API client (separate entry point) |
+| `api` | the API client of the read mirror and the Accountable Node (separate entry point) |
 
 The wallet file carries its scrypt parameters, so a file written with any parameter set opens with any
 client. `DEFAULT_SCRYPT_PARAMS` is N=2^17, r=8, p=1 (128 MiB), the OWASP minimum, and takes a few
