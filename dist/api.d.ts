@@ -4,9 +4,8 @@
  * The paths and response shapes are the node's public routes (node/src/api/rest/routes/public in the
  * blockchain repository), kept in one place so that a change is made here, and only here. Every response
  * is checked for the fields a wallet needs; a response of another shape is reported as an error instead
- * of producing a wrong transaction. The client carries only the calls a wallet makes today; the node
- * answers more (GET /api/v1/transactions/:txid, and the asset and blockCount record fields) that are added
- * here with their first caller.
+ * of producing a wrong transaction. The client carries only the calls a wallet makes today; a route is
+ * added here with its first caller.
  *
  *   GET  /api/v1/status                              -> { chainId, version, network, height }
  *   GET  /api/v1/accounts/:address                   -> { address, balance, sequence }
@@ -20,6 +19,12 @@
  *                                                       200 status included: the engine wrote the block;
  *                                                       202 status pending: still processing when the
  *                                                       node's wait ended; 400 when rejected
+ *
+ * One transaction by its id is read from the read mirror only; it never goes to the node:
+ *
+ *   GET  /api/v1/transactions/:txid                  -> TransactionRecord with asset and blockCount; 404 with
+ *                                                       details { txid, height } while the mirror does not
+ *                                                       have it: not in a block yet, or not mirrored yet
  *
  * The read mirror alone serves the market reads, the completed SBRIT trades (external-payment sales the
  * Accountable Node settled); they never go to the node:
@@ -83,6 +88,10 @@ export interface TransactionRecord {
     timestamp: number;
     method?: string;
     status?: string;
+    /** the asset of the amount; carried by fetchTransaction */
+    asset?: string;
+    /** height of the block that holds the transaction; carried by fetchTransaction */
+    blockCount?: number;
 }
 export interface SubmitResult {
     txid: string;
@@ -171,6 +180,12 @@ export declare function fetchStatus(from?: ApiAddress): Promise<ChainStatus>;
 export declare function fetchAccount(address: string, from?: ApiAddress): Promise<AccountInfo>;
 /** Most recent transactions of an address, newest first. From the read address. */
 export declare function fetchTransactions(address: string, limit?: number): Promise<TransactionRecord[]>;
+/**
+ * One transaction by its id, with the height of the block that holds it, or null while the mirror does not have
+ * it (the mirror's 404 with details.height: not in a block yet, or not mirrored yet). Any other failure throws,
+ * a malformed id and a 404 of an unknown route included. From the read address only: it never goes to the node.
+ */
+export declare function fetchTransaction(txid: string): Promise<TransactionRecord | null>;
 /** The contract metadata a call transaction must carry: what the node reads from acct/<cid>/meta. From the node address. */
 export declare function fetchContract(cid: string): Promise<ContractMeta>;
 /**
