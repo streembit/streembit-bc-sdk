@@ -28,7 +28,12 @@ export declare function lastUsedIndex(metadata: WalletMetadata | undefined, acco
 export declare function knownAddressIndexes(metadata: WalletMetadata | undefined): KnownAddressIndex[];
 /** Last index an address search should visit for an account: the last tracked index plus the gap limit. */
 export declare function addressSearchBound(metadata: WalletMetadata | undefined, accountIndex: number): number;
-/** The index the next address of an account gets, and the metadata recording it. */
+/**
+ * The index the next address of an account gets, and the metadata recording it. Account 0 index 0 is the wallet's
+ * own address: a wallet shows it when it is created and knownAddressIndexes counts it as handed out from the
+ * start, so the next address of account 0 is never index 0. Another account starts at its index 0, which no
+ * wallet has shown before.
+ */
 export declare function withNextAddress(metadata: WalletMetadata | undefined, accountIndex: number): {
     metadata: WalletMetadata;
     addressIndex: number;
