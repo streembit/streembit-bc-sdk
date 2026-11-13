@@ -7,7 +7,7 @@ wallet and the desktop wallet.
 - `streembit-bc-sdk`: key creation, HD derivation, addresses, transaction building, the signing preimage,
   the txid, signing through the `Signer` interface, the encrypted wallet file and its metadata, and the
   block hash and creator block signature that the node and the read mirror verify.
-- `streembit-bc-sdk/api`: the client of a read mirror's public HTTP API, for every read, and of the Accountable Node's, for the submission of signed transactions.
+- `streembit-bc-sdk/api`: the client of a read mirror's public HTTP API, for every read, and of the Accountable Node's, for the submission of signed transactions and the collection of multisig signatures.
 
 Pure JavaScript only (`@noble/curves`, `@noble/hashes`, `@scure/bip32`, `@scure/bip39`, `decimal.js` and
 Web Crypto), no native modules and no WebAssembly. Every function carries the name of the node function it
@@ -63,10 +63,10 @@ The API client calls two addresses, and both are required:
 | Address | Set by | Calls |
 |---|---|---|
 | read | `configureReadApi(url)`, read back with `readApiBaseUrl()` | every read: `fetchStatus()`, `fetchAccount(address)`, `fetchTransactions(address)`, `fetchWalletTransactions(addresses)`, `fetchTransaction(txid)`, `fetchContract(cid)`, `fetchPrice()`, `fetchTrades()` |
-| node | `configureApi(url)`, read back with `apiBaseUrl()` | the submission of a signed transaction: `submitTransaction`, `submitWithSequenceRetry` |
+| node | `configureApi(url)`, read back with `apiBaseUrl()` | the submission of a signed transaction: `submitTransaction`, `submitWithSequenceRetry`; the multisig requests: `createMultisigRequest`, `fetchMultisigRequests`, `fetchMultisigRequest`, `sendMultisigSignature`, `submitMultisigRequest` |
 
-The read address is a read mirror; the node address is the Accountable Node. No read is sent to the node, and
-there is no fallback: a read while no read address is configured (or after `configureReadApi('')`) is refused
+The read address is a read mirror; the node address is the Accountable Node. No read of the chain is sent to
+the node, and there is no fallback: a read while no read address is configured (or after `configureReadApi('')`) is refused
 with the error "The read API address is required". An error the client raises itself (no answer, an answer that
 is not JSON or lacks a field) names the address it called, "The node API at <url>" or "The read API at <url>";
 an error answer keeps the server's own message.
@@ -89,6 +89,17 @@ name the one it expects (`ERR_INVALID_SEQUENCE`, `details.expected`); the transa
 again with that sequence and submitted once more. `submitWithSequenceRetry(sequence, signedTransaction)` does
 both steps: it calls `signedTransaction` with the sequence to sign with, once, or twice when the node names
 another one, and answers the node's result with the sequence the accepted transaction carries.
+
+Multisig: a contract call that needs several signatures is parked at the Accountable Node, which collects the
+signatures and submits the transaction when the threshold is reached. The requests are kept by the node alone,
+not on the chain, so all five calls go to the node address. `createMultisigRequest(unsignedTx, signature)`
+parks the unsigned call with its sender's own signature (`getTxSignatures`); a sender has one open request and
+it expires one hour after the transaction's timestamp. `fetchMultisigRequests(signer, status)` lists the
+requests in which the public key is an authorised signer, `fetchMultisigRequest(id)` reads one.
+`sendMultisigSignature(id, signature)` uploads a signer's signature over the request's `unsignedTx`. The
+answers of the create and the signature call carry `submission` when the threshold was reached: `submitted`
+with the transaction id, `stale` (the sender's sequence moved, request again) or `failed`, which
+`submitMultisigRequest(id)` retries. A transaction carries at most 3 signatures in Phase 1.
 
 ## Modules
 

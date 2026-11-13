@@ -37,12 +37,29 @@
  *                                                       newest first, limit up to 100, default 20;
  *                                                       before is the next of the previous page
  *
- * The Accountable Node receives one call, the submission of a signed transaction:
+ * The Accountable Node receives the submission of a signed transaction:
  *
  *   POST /api/v1/transactions  (body: txToString(tx), canonical JSON) -> { txid, status }
  *                                                       200 status included: the engine wrote the block;
  *                                                       202 status pending: still processing when the
  *                                                       node's wait ended; 400 when rejected
+ *
+ * and the collection of the signatures of a multisig contract call. The requests waiting for signatures are
+ * kept by the Accountable Node alone, not on the chain, so a mirror cannot serve them: these five calls go to
+ * the node address. Every POST body is canonical JSON, the node refuses any other with ERR_NONCANONICAL_JSON:
+ *
+ *   POST /api/v1/multisig  (body: { unsignedTx, signature })  -> { record, submission? }
+ *                                                       parks an unsigned contract call with its sender's own
+ *                                                       signature; one open request per sender, it expires one
+ *                                                       hour after the transaction's timestamp
+ *   GET  /api/v1/multisig?signer=<public key>&status=   -> { records: PendingMultisigTx[] }
+ *                                                       the requests in which the key is an authorised signer
+ *   GET  /api/v1/multisig/:id                           -> { record }; 404 when unknown
+ *   POST /api/v1/multisig/:id/signatures  (body: { signature }) -> { record, submission? }
+ *   POST /api/v1/multisig/:id/submit  (body: {})        -> { record, submission }
+ *                                                       the retry of a submission that failed
+ *                                                       submission is present when the threshold was reached:
+ *                                                       submitted, stale (request again) or failed (retry)
  *
  * Two addresses, both required. The read address (configureReadApi) is a read mirror; the node address
  * (configureApi) is the Accountable Node. There is no fallback from one to the other: a read while no read
@@ -67,7 +84,8 @@
  */
 
 import { ErrorCode } from 'streembit-bc-types';
-import type { StateDiffRole } from 'streembit-bc-types';
+import type { StateDiffRole, ContractCallTransaction, TransactionSignature, PendingMultisigTx, PendingMultisigStatus, PendingMultisigSignature, MultisigCreateRequest, MultisigSignatureUpload, MultisigSubmission, MultisigSignatureResponse, MultisigSubmitResponse } from 'streembit-bc-types';
+import { encodeDeterministicJSON } from './encoding';
 
 
 const ENDPOINTS = {
@@ -78,6 +96,10 @@ const ENDPOINTS = {
     transactionsQuery: () => '/api/v1/transactions/query',
     contract: (cid: string) => `/api/v1/contracts/${encodeURIComponent(cid)}`,
     submit: () => '/api/v1/transactions',
+    multisig: (signer?: string, status?: string) => `/api/v1/multisig${signer ? `?signer=${encodeURIComponent(signer)}${status ? `&status=${encodeURIComponent(status)}` : ''}` : ''}`,
+    multisigRequest: (id: string) => `/api/v1/multisig/${encodeURIComponent(id)}`,
+    multisigSignatures: (id: string) => `/api/v1/multisig/${encodeURIComponent(id)}/signatures`,
+    multisigSubmit: (id: string) => `/api/v1/multisig/${encodeURIComponent(id)}/submit`,
     price: () => '/api/v1/market/price',
     trades: (limit: number, before?: string) => `/api/v1/market/trades?limit=${limit}${before ? `&before=${encodeURIComponent(before)}` : ''}`
 };
@@ -576,4 +598,112 @@ export async function submitWithSequenceRetry(sequence: number, signedTransactio
         const result = await submitTransaction(await signedTransaction(expected));
         return { ...result, sequence: expected, resubmitted: true };
     }
+}
+
+const MULTISIG_STATUSES: readonly string[] = ['pending', 'submitted', 'expired', 'stale'] satisfies PendingMultisigStatus[];
+const MULTISIG_SUBMISSION_STATUSES: readonly string[] = ['submitted', 'stale', 'failed'] satisfies MultisigSubmission['status'][];
+
+/** One request waiting for signatures, as the node's multisig routes answer it; the unsigned transaction is kept as it came, its bytes are what the signers sign */
+function multisigRecordOf(value: unknown): PendingMultisigTx {
+    if (!isRecord(value)) throw new ApiError('The multisig response holds a record that is not an object');
+    const unsignedTx = value.unsignedTx;
+    if (!isRecord(unsignedTx)) throw new ApiError('The response for multisig record has no "unsignedTx" object');
+    for (const field of ['type', 'from', 'to', 'method', 'data']) {
+        expectString(unsignedTx, field, 'multisig record unsignedTx');
+    }
+    expectNumber(unsignedTx, 'sequence', 'multisig record unsignedTx');
+    expectNumber(unsignedTx, 'timestamp', 'multisig record unsignedTx');
+    const status = expectString(value, 'status', 'multisig record');
+    if (!MULTISIG_STATUSES.includes(status)) throw new ApiError(`The multisig response holds a record with the unknown status "${status}"`);
+    const signers = value.authorizedSigners;
+    if (!Array.isArray(signers) || !signers.every(signer => typeof signer === 'string')) throw new ApiError('The response for multisig record has no "authorizedSigners" list');
+    if (!Array.isArray(value.signatures)) throw new ApiError('The response for multisig record has no "signatures" list');
+    const signatures: PendingMultisigSignature[] = value.signatures.map(item => {
+        if (!isRecord(item)) throw new ApiError('The multisig response holds a signature that is not an object');
+        return { publickey: expectString(item, 'publickey', 'multisig record signatures'), signature: expectString(item, 'signature', 'multisig record signatures'), receivedAt: expectNumber(item, 'receivedAt', 'multisig record signatures') };
+    });
+    return {
+        id: expectString(value, 'id', 'multisig record'),
+        unsignedTx: unsignedTx as unknown as PendingMultisigTx['unsignedTx'],
+        contract: expectString(value, 'contract', 'multisig record'),
+        method: expectString(value, 'method', 'multisig record'),
+        thresholdM: expectNumber(value, 'thresholdM', 'multisig record'),
+        authorizedSigners: signers as string[],
+        signatures,
+        status: status as PendingMultisigStatus,
+        createdAt: expectNumber(value, 'createdAt', 'multisig record'),
+        expiresAt: expectNumber(value, 'expiresAt', 'multisig record'),
+        submittedTxId: typeof value.submittedTxId === 'string' ? value.submittedTxId : undefined
+    };
+}
+
+/** The outcome of the node's submission attempt in a multisig answer, undefined when the answer has none: the threshold is not reached yet */
+function multisigSubmissionOf(value: unknown): MultisigSubmission | undefined {
+    if (value === undefined || value === null) return undefined;
+    if (!isRecord(value)) throw new ApiError('The multisig response holds a submission that is not an object');
+    const status = expectString(value, 'status', 'multisig submission');
+    if (!MULTISIG_SUBMISSION_STATUSES.includes(status)) throw new ApiError(`The multisig response holds a submission with the unknown status "${status}"`);
+    return {
+        status: status as MultisigSubmission['status'],
+        txId: typeof value.txId === 'string' ? value.txId : undefined,
+        response: typeof value.response === 'string' ? value.response : undefined,
+        reason: typeof value.reason === 'string' ? value.reason : undefined
+    };
+}
+
+/** The answer of the create and the signature routes: the record, and the submission outcome when this signature reached the threshold */
+function multisigSignatureResponseOf(body: unknown): MultisigSignatureResponse {
+    if (!isRecord(body)) throw new ApiError('The multisig response is not an object');
+    const submission = multisigSubmissionOf(body.submission);
+    return submission ? { record: multisigRecordOf(body.record), submission } : { record: multisigRecordOf(body.record) };
+}
+
+/**
+ * Park an unsigned contract call at the node for the collection of its signatures. To the node address.
+ * @param unsignedTx The contract call, built for the chain id and version the read address reports, without signatures
+ * @param signature The sender's own signature over it (getTxSignatures with the sender's signer); the node parks nothing without it
+ * @returns The record, and the submission outcome when the sender's signature alone reached the threshold
+ */
+export function createMultisigRequest(unsignedTx: ContractCallTransaction, signature: TransactionSignature): Promise<MultisigSignatureResponse> {
+    const message: MultisigCreateRequest = { unsignedTx, signature };
+    return request('node', ENDPOINTS.multisig(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: encodeDeterministicJSON(message, { asString: true }) }, multisigSignatureResponseOf);
+}
+
+/**
+ * The requests in which the public key is an authorised signer, oldest first. From the node address: the requests exist there alone.
+ * @param signer The compressed public key, 66 hex characters, in lower case as the node records its signers
+ * @param status Only the requests of this status; all when left out
+ */
+export function fetchMultisigRequests(signer: string, status?: PendingMultisigStatus): Promise<PendingMultisigTx[]> {
+    return request('node', ENDPOINTS.multisig(signer, status), { method: 'GET' }, body => {
+        if (!isRecord(body) || !Array.isArray(body.records)) throw new ApiError('The multisig response has no "records" list');
+        return body.records.map(multisigRecordOf);
+    });
+}
+
+/** One request by its id. From the node address. An unknown id is the node's 404, thrown as an ApiError with the code ERR_KEY_NOT_FOUND. */
+export function fetchMultisigRequest(id: string): Promise<PendingMultisigTx> {
+    return request('node', ENDPOINTS.multisigRequest(id), { method: 'GET' }, body => {
+        if (!isRecord(body)) throw new ApiError('The multisig response is not an object');
+        return multisigRecordOf(body.record);
+    });
+}
+
+/**
+ * Upload a signer's signature over the request's unsigned transaction (getTxSignatures over record.unsignedTx). To the node address.
+ * @returns The record with the signature, and the submission outcome when this signature reached the threshold
+ */
+export function sendMultisigSignature(id: string, signature: TransactionSignature): Promise<MultisigSignatureResponse> {
+    const message: MultisigSignatureUpload = { signature };
+    return request('node', ENDPOINTS.multisigSignatures(id), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: encodeDeterministicJSON(message, { asString: true }) }, multisigSignatureResponseOf);
+}
+
+/** Retry the submission of a request that holds its signatures and whose automatic submission failed. To the node address. */
+export function submitMultisigRequest(id: string): Promise<MultisigSubmitResponse> {
+    return request('node', ENDPOINTS.multisigSubmit(id), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: encodeDeterministicJSON({}, { asString: true }) }, body => {
+        if (!isRecord(body)) throw new ApiError('The multisig response is not an object');
+        const submission = multisigSubmissionOf(body.submission);
+        if (!submission) throw new ApiError('The response for multisig submit has no "submission" object');
+        return { record: multisigRecordOf(body.record), submission };
+    });
 }
