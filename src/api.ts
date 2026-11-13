@@ -21,6 +21,13 @@
  *   GET  /api/v1/transactions/:txid                  -> TransactionRecord with asset and blockCount; 404 with
  *                                                       details { txid, height } while the mirror does not
  *                                                       have it: not in a block yet, or not mirrored yet
+ *   POST /api/v1/transactions/query  (body: { addresses, limit, before }) -> { transactions: WalletTransactionRecord[], next, height }
+ *                                                       the history of a whole wallet in one request: the
+ *                                                       transactions of the listed addresses merged, newest
+ *                                                       first, each transaction once; limit up to 100,
+ *                                                       default 20; before is the next of the previous page.
+ *                                                       A read sent as a POST because the address list of an
+ *                                                       exchange does not fit a URL
  *   GET  /api/v1/market/price                        -> MarketPrice of the latest trade, a completed SBRIT
  *                                                       sale the Accountable Node settled; 404 with
  *                                                       details { height } while no trade exists
@@ -65,6 +72,7 @@ const ENDPOINTS = {
     account: (address: string) => `/api/v1/accounts/${encodeURIComponent(address)}`,
     transactions: (address: string, limit: number) => `/api/v1/accounts/${encodeURIComponent(address)}/transactions?limit=${limit}`,
     transaction: (txid: string) => `/api/v1/transactions/${encodeURIComponent(txid)}`,
+    transactionsQuery: () => '/api/v1/transactions/query',
     contract: (cid: string) => `/api/v1/contracts/${encodeURIComponent(cid)}`,
     submit: () => '/api/v1/transactions',
     price: () => '/api/v1/market/price',
@@ -110,6 +118,43 @@ export interface TransactionRecord {
     asset?: string;
     /** height of the block that holds the transaction; carried by fetchTransaction */
     blockCount?: number;
+}
+
+/** One transaction of a wallet's history, with the block that holds it: what fetchWalletTransactions delivers */
+export interface WalletTransactionRecord {
+    txid: string;
+    type: string;
+    from: string;
+    to: string;
+    /** decimal string */
+    amount: string;
+    asset: string;
+    /** ms */
+    timestamp: number;
+    /** height of the block that holds the transaction */
+    blockCount: number;
+    /** position of the transaction in its block; blockCount and position order the history and form its paging cursor */
+    position: number;
+    /** the contract method of a contract call */
+    method?: string;
+    /** the fee the transaction paid, as the transaction itself carries it; absent for a transaction that pays none (a mint, a bootstrap transaction) */
+    fee?: WalletTransactionFee;
+}
+
+/** The fee of a transaction of a wallet's history: the amount and the asset the sender paid */
+export interface WalletTransactionFee {
+    /** decimal string */
+    amount: string;
+    asset: string;
+}
+
+export interface WalletTransactionsPage {
+    /** newest first; a transaction between two of the listed addresses is here once */
+    transactions: WalletTransactionRecord[];
+    /** pass back as before for the next older page; null on the last page */
+    next: string | null;
+    /** the mirror's height. Streembit has no confirmations: a block is final when written, and a transaction the mirror has is final; blockCount says where it is */
+    height: number;
 }
 
 export interface SubmitResult {
@@ -336,6 +381,40 @@ export function fetchTransactions(address: string, limit = 20): Promise<Transact
             method: typeof item.method === 'string' ? item.method : undefined,
             status: typeof item.status === 'string' ? item.status : undefined
         }));
+    });
+}
+
+/**
+ * The history of a whole wallet in one request: the transactions of the listed addresses merged, newest first,
+ * each transaction once, a page at a time; before is the next of the previous page. From the read address.
+ * @param addresses The addresses of the wallet, at least one
+ * @param limit Number of transactions of the page, up to 100
+ * @param before The next of the previous page, for the page of older transactions
+ */
+export async function fetchWalletTransactions(addresses: string[], limit = 20, before?: string): Promise<WalletTransactionsPage> {
+    if (addresses.length === 0) {
+        throw new ApiError('The wallet history needs at least one address');
+    }
+    return request('read', ENDPOINTS.transactionsQuery(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ addresses, limit, before }) }, body => {
+        if (!isRecord(body) || !Array.isArray(body.transactions)) throw new ApiError('The wallet transactions response has no "transactions" list');
+        const transactions = body.transactions.map(item => {
+            if (!isRecord(item)) throw new ApiError('The wallet transactions response holds a transaction that is not an object');
+            return {
+                txid: expectString(item, 'txid', 'wallet transactions'),
+                type: expectString(item, 'type', 'wallet transactions'),
+                from: expectString(item, 'from', 'wallet transactions'),
+                to: expectString(item, 'to', 'wallet transactions'),
+                amount: expectString(item, 'amount', 'wallet transactions'),
+                asset: expectString(item, 'asset', 'wallet transactions'),
+                timestamp: expectNumber(item, 'timestamp', 'wallet transactions'),
+                blockCount: expectNumber(item, 'blockCount', 'wallet transactions'),
+                position: expectNumber(item, 'position', 'wallet transactions'),
+                method: typeof item.method === 'string' ? item.method : undefined,
+                // The fee the transaction paid, never a constant of the client; a transaction without a fee has none here either
+                fee: isRecord(item.fee) ? { amount: expectString(item.fee, 'amount', 'wallet transactions fee'), asset: expectString(item.fee, 'asset', 'wallet transactions fee') } : undefined
+            };
+        });
+        return { transactions, next: typeof body.next === 'string' ? body.next : null, height: expectNumber(body, 'height', 'wallet transactions') };
     });
 }
 

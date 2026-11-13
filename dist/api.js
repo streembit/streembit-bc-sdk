@@ -21,6 +21,13 @@
  *   GET  /api/v1/transactions/:txid                  -> TransactionRecord with asset and blockCount; 404 with
  *                                                       details { txid, height } while the mirror does not
  *                                                       have it: not in a block yet, or not mirrored yet
+ *   POST /api/v1/transactions/query  (body: { addresses, limit, before }) -> { transactions: WalletTransactionRecord[], next, height }
+ *                                                       the history of a whole wallet in one request: the
+ *                                                       transactions of the listed addresses merged, newest
+ *                                                       first, each transaction once; limit up to 100,
+ *                                                       default 20; before is the next of the previous page.
+ *                                                       A read sent as a POST because the address list of an
+ *                                                       exchange does not fit a URL
  *   GET  /api/v1/market/price                        -> MarketPrice of the latest trade, a completed SBRIT
  *                                                       sale the Accountable Node settled; 404 with
  *                                                       details { height } while no trade exists
@@ -65,6 +72,7 @@ exports.readApiBaseUrl = readApiBaseUrl;
 exports.fetchStatus = fetchStatus;
 exports.fetchAccount = fetchAccount;
 exports.fetchTransactions = fetchTransactions;
+exports.fetchWalletTransactions = fetchWalletTransactions;
 exports.fetchTransaction = fetchTransaction;
 exports.fetchContract = fetchContract;
 exports.fetchPrice = fetchPrice;
@@ -77,6 +85,7 @@ const ENDPOINTS = {
     account: (address) => `/api/v1/accounts/${encodeURIComponent(address)}`,
     transactions: (address, limit) => `/api/v1/accounts/${encodeURIComponent(address)}/transactions?limit=${limit}`,
     transaction: (txid) => `/api/v1/transactions/${encodeURIComponent(txid)}`,
+    transactionsQuery: () => '/api/v1/transactions/query',
     contract: (cid) => `/api/v1/contracts/${encodeURIComponent(cid)}`,
     submit: () => '/api/v1/transactions',
     price: () => '/api/v1/market/price',
@@ -231,6 +240,41 @@ function fetchTransactions(address, limit = 20) {
             method: typeof item.method === 'string' ? item.method : undefined,
             status: typeof item.status === 'string' ? item.status : undefined
         }));
+    });
+}
+/**
+ * The history of a whole wallet in one request: the transactions of the listed addresses merged, newest first,
+ * each transaction once, a page at a time; before is the next of the previous page. From the read address.
+ * @param addresses The addresses of the wallet, at least one
+ * @param limit Number of transactions of the page, up to 100
+ * @param before The next of the previous page, for the page of older transactions
+ */
+async function fetchWalletTransactions(addresses, limit = 20, before) {
+    if (addresses.length === 0) {
+        throw new ApiError('The wallet history needs at least one address');
+    }
+    return request('read', ENDPOINTS.transactionsQuery(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ addresses, limit, before }) }, body => {
+        if (!isRecord(body) || !Array.isArray(body.transactions))
+            throw new ApiError('The wallet transactions response has no "transactions" list');
+        const transactions = body.transactions.map(item => {
+            if (!isRecord(item))
+                throw new ApiError('The wallet transactions response holds a transaction that is not an object');
+            return {
+                txid: expectString(item, 'txid', 'wallet transactions'),
+                type: expectString(item, 'type', 'wallet transactions'),
+                from: expectString(item, 'from', 'wallet transactions'),
+                to: expectString(item, 'to', 'wallet transactions'),
+                amount: expectString(item, 'amount', 'wallet transactions'),
+                asset: expectString(item, 'asset', 'wallet transactions'),
+                timestamp: expectNumber(item, 'timestamp', 'wallet transactions'),
+                blockCount: expectNumber(item, 'blockCount', 'wallet transactions'),
+                position: expectNumber(item, 'position', 'wallet transactions'),
+                method: typeof item.method === 'string' ? item.method : undefined,
+                // The fee the transaction paid, never a constant of the client; a transaction without a fee has none here either
+                fee: isRecord(item.fee) ? { amount: expectString(item.fee, 'amount', 'wallet transactions fee'), asset: expectString(item.fee, 'asset', 'wallet transactions fee') } : undefined
+            };
+        });
+        return { transactions, next: typeof body.next === 'string' ? body.next : null, height: expectNumber(body, 'height', 'wallet transactions') };
     });
 }
 /**

@@ -62,7 +62,7 @@ The API client calls two addresses, and both are required:
 
 | Address | Set by | Calls |
 |---|---|---|
-| read | `configureReadApi(url)`, read back with `readApiBaseUrl()` | every read: `fetchStatus()`, `fetchAccount(address)`, `fetchTransactions(address)`, `fetchTransaction(txid)`, `fetchContract(cid)`, `fetchPrice()`, `fetchTrades()` |
+| read | `configureReadApi(url)`, read back with `readApiBaseUrl()` | every read: `fetchStatus()`, `fetchAccount(address)`, `fetchTransactions(address)`, `fetchWalletTransactions(addresses)`, `fetchTransaction(txid)`, `fetchContract(cid)`, `fetchPrice()`, `fetchTrades()` |
 | node | `configureApi(url)`, read back with `apiBaseUrl()` | the submission of a signed transaction: `submitTransaction`, `submitWithSequenceRetry` |
 
 The read address is a read mirror; the node address is the Accountable Node. No read is sent to the node, and
@@ -73,6 +73,11 @@ an error answer keeps the server's own message.
 
 `fetchTransaction(txid)` reads one transaction with the height of its block. It answers `null` while the mirror
 does not have the transaction.
+
+`fetchWalletTransactions(addresses, limit, before)` reads the history of a whole wallet in one request: the
+transactions of the listed addresses merged, newest first, each transaction once, with the block height and
+position of each, the fee it paid as the transaction carries it, and the mirror's height. It answers a page of up to 100 transactions and `next`, which is passed
+back as `before` for the page of older ones. `fetchTransactions(address)` stays the history of one address.
 
 Sequence rule: a transaction is built from what the read address reports, the chain id, the version and the
 account's sequence. The mirror can be a block or two behind the node, so the node may refuse the sequence and
