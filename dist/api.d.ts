@@ -23,7 +23,9 @@
  *   POST /api/v1/transactions/query  (body: { addresses, limit, before }) -> { transactions: WalletTransactionRecord[], next, height }
  *                                                       the history of a whole wallet in one request: the
  *                                                       transactions of the listed addresses merged, newest
- *                                                       first, each transaction once; limit up to 100,
+ *                                                       first, each transaction once, with balanceChanges: what it
+ *                                                       did to each listed address ({ address, role,
+ *                                                       change }); limit up to 100,
  *                                                       default 20; before is the next of the previous page.
  *                                                       A read sent as a POST because the address list of an
  *                                                       exchange does not fit a URL
@@ -62,6 +64,7 @@
  * an answer without a required field is an ApiError with an empty code, and its message names the address
  * it called: "the node API at <url>" or "the read API at <url>".
  */
+import type { StateDiffRole } from 'streembit-bc-types';
 export interface ChainStatus {
     chainId: number;
     version: number;
@@ -116,6 +119,16 @@ export interface WalletTransactionRecord {
     method?: string;
     /** the fee the transaction paid, as the transaction itself carries it; absent for a transaction that pays none (a mint, a bootstrap transaction) */
     fee?: WalletTransactionFee;
+    /** what the transaction did to each of the listed addresses it touched, one row per address; from, to and amount do not say it for an address a contract paid or for the attester's fee */
+    balanceChanges: WalletBalanceChange[];
+}
+/** What a transaction did to one address, as the chain's state diff records it and the mirror keeps it */
+export interface WalletBalanceChange {
+    address: string;
+    /** sent: the sender; received: the recipient of a transfer or a mint allocation; contract: any other account the transaction changed; fee: the attester credited the fee */
+    role: StateDiffRole;
+    /** signed decimal string: the balance after the transaction minus the balance before, e.g. "-1.51" for a sender (amount and fee) or "1.5" */
+    change: string;
 }
 /** The fee of a transaction of a wallet's history: the amount and the asset the sender paid */
 export interface WalletTransactionFee {

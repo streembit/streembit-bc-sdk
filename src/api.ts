@@ -24,7 +24,9 @@
  *   POST /api/v1/transactions/query  (body: { addresses, limit, before }) -> { transactions: WalletTransactionRecord[], next, height }
  *                                                       the history of a whole wallet in one request: the
  *                                                       transactions of the listed addresses merged, newest
- *                                                       first, each transaction once; limit up to 100,
+ *                                                       first, each transaction once, with balanceChanges: what it
+ *                                                       did to each listed address ({ address, role,
+ *                                                       change }); limit up to 100,
  *                                                       default 20; before is the next of the previous page.
  *                                                       A read sent as a POST because the address list of an
  *                                                       exchange does not fit a URL
@@ -65,6 +67,7 @@
  */
 
 import { ErrorCode } from 'streembit-bc-types';
+import type { StateDiffRole } from 'streembit-bc-types';
 
 
 const ENDPOINTS = {
@@ -139,6 +142,17 @@ export interface WalletTransactionRecord {
     method?: string;
     /** the fee the transaction paid, as the transaction itself carries it; absent for a transaction that pays none (a mint, a bootstrap transaction) */
     fee?: WalletTransactionFee;
+    /** what the transaction did to each of the listed addresses it touched, one row per address; from, to and amount do not say it for an address a contract paid or for the attester's fee */
+    balanceChanges: WalletBalanceChange[];
+}
+
+/** What a transaction did to one address, as the chain's state diff records it and the mirror keeps it */
+export interface WalletBalanceChange {
+    address: string;
+    /** sent: the sender; received: the recipient of a transfer or a mint allocation; contract: any other account the transaction changed; fee: the attester credited the fee */
+    role: StateDiffRole;
+    /** signed decimal string: the balance after the transaction minus the balance before, e.g. "-1.51" for a sender (amount and fee) or "1.5" */
+    change: string;
 }
 
 /** The fee of a transaction of a wallet's history: the amount and the asset the sender paid */
@@ -337,6 +351,22 @@ function expectNumber(body: Record<string, unknown>, field: string, where: strin
     return value;
 }
 
+const BALANCE_CHANGE_ROLES: readonly string[] = ['sent', 'received', 'contract', 'fee'] satisfies StateDiffRole[];
+
+/** The balance changes of one transaction of the wallet history answer: one row per listed address the transaction touched */
+function balanceChangesOf(item: Record<string, unknown>): WalletBalanceChange[] {
+    const list = item.balanceChanges;
+    if (!Array.isArray(list) || list.length === 0) throw new ApiError('The response for wallet transactions has no "balanceChanges" list');
+    return list.map(row => {
+        if (!isRecord(row)) throw new ApiError('The wallet transactions response holds a balance change that is not an object');
+        const role = expectString(row, 'role', 'wallet transactions balanceChanges');
+        const change = expectString(row, 'change', 'wallet transactions balanceChanges');
+        if (!BALANCE_CHANGE_ROLES.includes(role)) throw new ApiError(`The wallet transactions response holds a balance change with the unknown role "${role}"`);
+        if (!/^-?\d+(\.\d+)?$/.test(change)) throw new ApiError(`The wallet transactions response holds a balance change that is not a decimal amount: "${change}"`);
+        return { address: expectString(row, 'address', 'wallet transactions balanceChanges'), role: role as StateDiffRole, change };
+    });
+}
+
 /** Chain id, protocol version, network name and height. From the read address, also for a transaction being built (see the sequence rule above). */
 export function fetchStatus(): Promise<ChainStatus> {
     return request('read', ENDPOINTS.status(), { method: 'GET' }, body => {
@@ -411,7 +441,8 @@ export async function fetchWalletTransactions(addresses: string[], limit = 20, b
                 position: expectNumber(item, 'position', 'wallet transactions'),
                 method: typeof item.method === 'string' ? item.method : undefined,
                 // The fee the transaction paid, never a constant of the client; a transaction without a fee has none here either
-                fee: isRecord(item.fee) ? { amount: expectString(item.fee, 'amount', 'wallet transactions fee'), asset: expectString(item.fee, 'asset', 'wallet transactions fee') } : undefined
+                fee: isRecord(item.fee) ? { amount: expectString(item.fee, 'amount', 'wallet transactions fee'), asset: expectString(item.fee, 'asset', 'wallet transactions fee') } : undefined,
+                balanceChanges: balanceChangesOf(item)
             };
         });
         return { transactions, next: typeof body.next === 'string' ? body.next : null, height: expectNumber(body, 'height', 'wallet transactions') };

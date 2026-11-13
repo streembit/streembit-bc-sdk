@@ -24,7 +24,9 @@
  *   POST /api/v1/transactions/query  (body: { addresses, limit, before }) -> { transactions: WalletTransactionRecord[], next, height }
  *                                                       the history of a whole wallet in one request: the
  *                                                       transactions of the listed addresses merged, newest
- *                                                       first, each transaction once; limit up to 100,
+ *                                                       first, each transaction once, with balanceChanges: what it
+ *                                                       did to each listed address ({ address, role,
+ *                                                       change }); limit up to 100,
  *                                                       default 20; before is the next of the previous page.
  *                                                       A read sent as a POST because the address list of an
  *                                                       exchange does not fit a URL
@@ -195,6 +197,24 @@ function expectNumber(body, field, where) {
     }
     return value;
 }
+const BALANCE_CHANGE_ROLES = ['sent', 'received', 'contract', 'fee'];
+/** The balance changes of one transaction of the wallet history answer: one row per listed address the transaction touched */
+function balanceChangesOf(item) {
+    const list = item.balanceChanges;
+    if (!Array.isArray(list) || list.length === 0)
+        throw new ApiError('The response for wallet transactions has no "balanceChanges" list');
+    return list.map(row => {
+        if (!isRecord(row))
+            throw new ApiError('The wallet transactions response holds a balance change that is not an object');
+        const role = expectString(row, 'role', 'wallet transactions balanceChanges');
+        const change = expectString(row, 'change', 'wallet transactions balanceChanges');
+        if (!BALANCE_CHANGE_ROLES.includes(role))
+            throw new ApiError(`The wallet transactions response holds a balance change with the unknown role "${role}"`);
+        if (!/^-?\d+(\.\d+)?$/.test(change))
+            throw new ApiError(`The wallet transactions response holds a balance change that is not a decimal amount: "${change}"`);
+        return { address: expectString(row, 'address', 'wallet transactions balanceChanges'), role: role, change };
+    });
+}
 /** Chain id, protocol version, network name and height. From the read address, also for a transaction being built (see the sequence rule above). */
 function fetchStatus() {
     return request('read', ENDPOINTS.status(), { method: 'GET' }, body => {
@@ -271,7 +291,8 @@ async function fetchWalletTransactions(addresses, limit = 20, before) {
                 position: expectNumber(item, 'position', 'wallet transactions'),
                 method: typeof item.method === 'string' ? item.method : undefined,
                 // The fee the transaction paid, never a constant of the client; a transaction without a fee has none here either
-                fee: isRecord(item.fee) ? { amount: expectString(item.fee, 'amount', 'wallet transactions fee'), asset: expectString(item.fee, 'asset', 'wallet transactions fee') } : undefined
+                fee: isRecord(item.fee) ? { amount: expectString(item.fee, 'amount', 'wallet transactions fee'), asset: expectString(item.fee, 'asset', 'wallet transactions fee') } : undefined,
+                balanceChanges: balanceChangesOf(item)
             };
         });
         return { transactions, next: typeof body.next === 'string' ? body.next : null, height: expectNumber(body, 'height', 'wallet transactions') };

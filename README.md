@@ -76,8 +76,12 @@ does not have the transaction.
 
 `fetchWalletTransactions(addresses, limit, before)` reads the history of a whole wallet in one request: the
 transactions of the listed addresses merged, newest first, each transaction once, with the block height and
-position of each, the fee it paid as the transaction carries it, and the mirror's height. It answers a page of up to 100 transactions and `next`, which is passed
-back as `before` for the page of older ones. `fetchTransactions(address)` stays the history of one address.
+position of each, the fee it paid as the transaction carries it, and the mirror's height. Each transaction
+carries `balanceChanges`, one row per listed address it touched: the `address`, its `role` (`sent`, `received`,
+`contract` or `fee`) and the signed `change` of its balance, as the chain's state diff records them. `from`,
+`to` and `amount` do not say what an address received from a contract or as the attester's fee; `balanceChanges`
+does. It answers a page of up to 100 transactions and `next`, which is passed back as `before` for the page of
+older ones. `fetchTransactions(address)` stays the history of one address.
 
 Sequence rule: a transaction is built from what the read address reports, the chain id, the version and the
 account's sequence. The mirror can be a block or two behind the node, so the node may refuse the sequence and
