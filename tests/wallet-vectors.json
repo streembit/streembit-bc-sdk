@@ -1,0 +1,163 @@
+{
+  "generatedBy": {
+    "repository": "streembit-bc-sdk",
+    "version": "1.0.0",
+    "generatedAt": "2026-10-28T17:38:20.487Z"
+  },
+  "chainId": 1337,
+  "version": 1,
+  "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+  "accounts": [
+    {
+      "path": "m/44'/19640701'/0'/0/0",
+      "privateKey": "db2bab361a2d3a3d77a3ab32c0e617e27584d46d04e2e7010c4254a66b082dad",
+      "publicKey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
+      "address": "SMwB3Yytvt11n79jTCBwfComY8CsBsxjd3"
+    },
+    {
+      "path": "m/44'/19640701'/0'/0/1",
+      "privateKey": "f2018d9a96d5788145b804ce957964bfeecdb8bc7667d0d25d0d61730ca2907f",
+      "publicKey": "0384cdfcb334a91b824fcae61ee479f49e643e6bdc6e0582c92669f339e312caec",
+      "address": "SixHfQZLaJHrMfcXQTo6L8NNBCNT5zReCJ"
+    },
+    {
+      "path": "m/44'/19640701'/1'/0/0",
+      "privateKey": "c519c816d6d924d3a9bc5c1af28b99944167b97320e453c93a74f2f0adabf7f8",
+      "publicKey": "027ca4b41c546559c32ae1b5af4ff2cf1c4af6720c5ff7d48b9478cdf6c3c48feb",
+      "address": "SXn81z27ALhgp7fkyZcmamTthW5ZsAguQK"
+    }
+  ],
+  "contractAddress": {
+    "cid32": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+    "address": "CPnsvUmZ6imsKM1QYi5Bbi3cG2UUY5Dgm2"
+  },
+  "encoding": {
+    "input": {
+      "z": 1,
+      "a": {
+        "d": "x",
+        "c": [
+          3,
+          {
+            "b": 2,
+            "a": 1
+          }
+        ]
+      },
+      "big": "10n"
+    },
+    "note": "input.big is the BigInt 10n and input.u is undefined in the encoder call",
+    "json": "{\"a\":{\"c\":[3,{\"a\":1,\"b\":2}],\"d\":\"x\"},\"big\":\"10n\",\"z\":1}"
+  },
+  "hashes": {
+    "input": "streembit hashing vector",
+    "blake2b256": "89d8db66d68c85c13a3023d29eba7840533d860a6d3e2fdc5e383b1816193c50",
+    "sha256": "d24df81ae2b7185940e05a08ce400261eaef09cabf2401947f9db6f473fce832",
+    "ripemd160": "68babbe553c67613d0528e204874a2fdf1397ac7",
+    "hash160": "b8ce64a4bbd02efb54c1b1ebb81479ee0ea62660",
+    "doubleSha256": "6792fda52a5539edd250ec2e52d832acf312d9161b83d3dbfd7996184b5357ff"
+  },
+  "salt": {
+    "input": "wallet-vectors salt",
+    "salt": "950b5fad4be428112b959fbbf30702ed"
+  },
+  "signature": {
+    "dataHex": "7b2261223a317d",
+    "privateKey": "db2bab361a2d3a3d77a3ab32c0e617e27584d46d04e2e7010c4254a66b082dad",
+    "publicKey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
+    "signature": "3046022100d6bdcc2c807082c11fed3fe8245d68dea02ebab8006d27f96d60a86e8500febf022100da2f1dde980a3cfd97d972ef95076f5eaf30e39155906fd579f0f98e7fc85529"
+  },
+  "transfer": {
+    "tx": {
+      "version": 1,
+      "chainId": 1337,
+      "type": "transfer",
+      "from": "SMwB3Yytvt11n79jTCBwfComY8CsBsxjd3",
+      "to": "SixHfQZLaJHrMfcXQTo6L8NNBCNT5zReCJ",
+      "amount": "12.5",
+      "asset": "SBRIT",
+      "sequence": 1,
+      "timestamp": 1760000000000,
+      "salt": "ac7e91db3fe04ba1478c3163160e4f13",
+      "fee": {
+        "amount": "0.01",
+        "asset": "SBRIT"
+      },
+      "signature": [
+        {
+          "publickey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
+          "signature": "304402206352c829a9b68a362c38f627eecda6a1eac5f18a446f192ba11cc705aa5a2d4d02204dcac3165ad98a76d397de0c0b930ff68ec891ce8c8b7fc89596b0e1eee4d858"
+        }
+      ]
+    },
+    "preimageHex": "7b22616d6f756e74223a2231322e35222c226173736574223a225342524954222c22636861696e4964223a313333372c2266726f6d223a22534d774233597974767431316e37396a5443427766436f6d593843734273786a6433222c2273616c74223a226163376539316462336665303462613134373863333136333136306534663133222c2273657175656e6365223a312c2274696d657374616d70223a313736303030303030303030302c22746f223a225369784866515a4c614a48724d66635851546f364c384e4e42434e54357a5265434a222c2274797065223a227472616e73666572222c2276657273696f6e223a317d",
+    "txid": "3b825db7f49c0230b0d96395727180612d5461e26d0c86815571edf7bb46b63e"
+  },
+  "contractCall": {
+    "tx": {
+      "version": 1,
+      "chainId": 1337,
+      "type": "contract_call",
+      "from": "SMwB3Yytvt11n79jTCBwfComY8CsBsxjd3",
+      "to": "CPnsvUmZ6imsKM1QYi5Bbi3cG2UUY5Dgm2",
+      "amount": "0",
+      "asset": "SBRIT",
+      "sequence": 2,
+      "timestamp": 1760000001000,
+      "salt": "07a92c1b03462cd4aced62b74d57f629",
+      "fee": {
+        "amount": "0.01",
+        "asset": "SBRIT"
+      },
+      "signature": [
+        {
+          "publickey": "02b2464f4bc84c56695fd058cfaa1a78327411e26e7aca58e7ce8b0d52cedcf25b",
+          "signature": "3046022100c79d4df3e190b66f4deabdc0d633fdf905173db1c085ff7c59f9cfcd2f7f85b1022100d572aeca8feaf02a2754e84d5006e664bedf2704cb8e7552bc1ede5d06ec6043"
+        }
+      ],
+      "data": "7b2276616c696461746f724964223a227631227d",
+      "method": "register",
+      "codeHash": "abababababababababababababababababababababababababababababababab",
+      "sandboxHash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+      "cid": "CPnsvUmZ6imsKM1QYi5Bbi3cG2UUY5Dgm2",
+      "location": "file_system"
+    },
+    "preimageHex": "7b22616d6f756e74223a2230222c226173736574223a225342524954222c22636861696e4964223a313333372c22636964223a2243506e7376556d5a36696d734b4d3151596935426269336347325555593544676d32222c22636f646548617368223a2261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162222c2264617461223a2237623232373636313663363936343631373436663732343936343232336132323736333132323764222c2266726f6d223a22534d774233597974767431316e37396a5443427766436f6d593843734273786a6433222c226c6f636174696f6e223a2266696c655f73797374656d222c226d6574686f64223a227265676973746572222c2273616c74223a223037613932633162303334363263643461636564363262373464353766363239222c2273616e64626f7848617368223a2263646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364636463646364222c2273657175656e6365223a322c2274696d657374616d70223a313736303030303030313030302c22746f223a2243506e7376556d5a36696d734b4d3151596935426269336347325555593544676d32222c2274797065223a22636f6e74726163745f63616c6c222c2276657273696f6e223a317d",
+    "txid": "38a92f857d1d1565b30ade3eb7bbd056b4790d03c045cc4152f8b6ffe8097871",
+    "cosignature": {
+      "publickey": "0384cdfcb334a91b824fcae61ee479f49e643e6bdc6e0582c92669f339e312caec",
+      "signature": "30450220733106838f3e130410950c236b16b1d4a1a1bf36e9a8c4c138def85ae491d275022100dcffbf5fe527a93f138d431b8ad1ce196cf571461392c1bef3978506ee95d0ea"
+    },
+    "pendingTxId": "0ec448050150c2eece9919785bb21d4bc560cc131fc1b781a3ece04f9770fbb6"
+  },
+  "walletFile": {
+    "password": "Wallet-Vectors#2026",
+    "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+    "payload": {
+      "encrypted": "ExNazm9/7pH0LB+up4zoQWXYNMpQC3HJXZEmWJRflu+kVaLsgkW0daex4W2kxDnL7BWiQVqtkOMNeDSUsbszflke0DD59jkGapOd3iGmh/uppBfrtB5ia2frpMe4p7A+/09xIfUUch+8Ndk3",
+      "salt": "x9nm3nn9j6BVbsWqNowVvFaXXcB9tppgjVhT3I1ZyIg=",
+      "iv": "svl1nlx94RcWbLXs+Irk+A==",
+      "authTag": "is/HzqPxOTNi8kGsSq4r4A==",
+      "kdf": "scrypt",
+      "kdfParams": {
+        "N": 131072,
+        "r": 8,
+        "p": 1,
+        "dkLen": 32
+      }
+    },
+    "keyPayload": {
+      "encrypted": "1BoDvE4x378pAF5YfrdzGjkR9oCXpiAcA/VBmFziK+72EUg4BDlmIDeYn7HUrZWcGmtBXHcpS/dX8oPiQghpIbrlgjbJltDoHhrfmJQd6uti",
+      "salt": "yiAU3O3jGMIvAl+7XU7aWifHgnEEX5GFjoN0fQDh9jI=",
+      "iv": "dv0bO5U7bwZolfFGkHmeuA==",
+      "authTag": "1SdVMmRA+1/Sr9FXUS8+fQ==",
+      "kdf": "scrypt",
+      "kdfParams": {
+        "N": 131072,
+        "r": 8,
+        "p": 1,
+        "dkLen": 32
+      }
+    }
+  }
+}
